@@ -1,2 +1,0 @@
-export const SIMULATION_TICK_MS = 50;
-export const SIMULATION_TICKS_PER_SECOND = 20;

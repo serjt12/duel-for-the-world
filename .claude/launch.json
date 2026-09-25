@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "project-palacio-web",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@project-palacio/web", "dev"],
+      "port": 5173
+    }
+  ]
+}

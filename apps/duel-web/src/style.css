@@ -1,0 +1,2149 @@
+:root {
+  --bg: #14161c;
+  --panel: #1e212b;
+  --panel-border: #33384a;
+  --text: #e8e6df;
+  --text-dim: #9a9fb0;
+  --accent-gold: #c9a227;
+  --accent-red: #a83232;
+  --accent-green: #3f8f5f;
+  font-family: "Georgia", "Times New Roman", serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+#app {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 10px 16px 32px;
+}
+
+h1 {
+  text-align: center;
+  color: var(--accent-gold);
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  text-align: center;
+  color: var(--text-dim);
+  margin-top: 0;
+  margin-bottom: 32px;
+  font-style: italic;
+}
+
+/* Main menu */
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.app-title {
+  font-size: 2.6em;
+  margin-top: 18px;
+  letter-spacing: 0.12em;
+}
+
+.menu-panel {
+  width: min(420px, 100%);
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.menu-panel--wide {
+  width: min(640px, 100%);
+}
+
+.menu-heading {
+  margin: 0;
+  color: var(--accent-gold);
+  font-size: 1.15em;
+}
+
+.menu-big {
+  min-height: 52px;
+  font-size: 1.1em;
+}
+
+.menu-big--quiet {
+  background: transparent;
+}
+
+.menu-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.menu-group-label {
+  color: var(--text-dim);
+  font-size: 0.78em;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.menu-choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.menu-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  min-height: 64px;
+  text-align: left;
+  padding: 10px 12px;
+}
+
+.menu-choice-label {
+  font-weight: bold;
+}
+
+.menu-choice-blurb {
+  color: var(--text-dim);
+  font-size: 0.82em;
+}
+
+.menu-choice--selected {
+  border-color: var(--accent-gold);
+  box-shadow: inset 0 0 0 1px var(--accent-gold);
+  background: #2c2a22;
+}
+
+.menu-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.menu-actions .primary {
+  flex: 1;
+  min-height: 48px;
+}
+
+.lobby-back {
+  background: transparent;
+}
+
+/* Board header: back to the menu */
+
+.leave-button {
+  padding: 6px 12px;
+  font-size: 0.85em;
+  background: transparent;
+}
+
+.leave-confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85em;
+}
+
+.leave-confirm button {
+  padding: 6px 12px;
+}
+
+/* Lobby */
+
+.lobby-panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 24px;
+  max-width: 420px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.lobby-panel button,
+input[type="text"] {
+  font: inherit;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--panel-border);
+  background: #262a37;
+  color: var(--text);
+}
+
+button {
+  font: inherit;
+  padding: 9px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--panel-border);
+  background: #262a37;
+  color: var(--text);
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+button:hover:not(:disabled) {
+  filter: brightness(1.2);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button.primary {
+  background: var(--accent-gold);
+  color: #1a1a1a;
+  border: none;
+  font-weight: bold;
+}
+
+button.danger {
+  background: var(--accent-red);
+  color: white;
+  border: none;
+}
+
+.edition-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lobby-panel button.edition-special {
+  font-size: 0.9em;
+  border-style: dashed;
+}
+
+.join-row {
+  display: flex;
+  gap: 8px;
+}
+
+.join-row input {
+  flex: 1;
+  text-transform: uppercase;
+}
+
+/* Board */
+
+.status-line {
+  text-align: center;
+  color: var(--accent-gold);
+  min-height: 1.4em;
+  margin-bottom: 12px;
+}
+
+.duelist-strip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  padding: 6px 14px;
+  margin-bottom: 6px;
+}
+
+.duelist-info {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.duelist-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.duelist-right button {
+  padding: 6px 14px;
+}
+
+.board-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.board-header h1 {
+  margin: 0;
+  font-size: 1.5em;
+}
+
+.edition-tag {
+  font-size: 0.72em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 1px 9px;
+}
+
+.board-header .status-line {
+  margin: 0;
+  min-height: 0;
+}
+
+.duelist-strip.active {
+  border-color: var(--accent-gold);
+}
+
+.mandate {
+  font-size: 1.3em;
+  font-weight: bold;
+  color: var(--accent-green);
+}
+
+.phase-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  text-align: center;
+  margin: 6px 0;
+  padding: 6px;
+  min-height: 30px;
+  border-radius: 6px;
+  background: #262a37;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.85em;
+  color: var(--text-dim);
+}
+
+.tag {
+  color: var(--text-dim);
+  font-size: 0.85em;
+}
+
+/* --- Field: two sides of five zones each, Yu-Gi-Oh style ------------------ */
+
+/* Each side is a 3-column mat: [pile] [5 zones] [pile]. Piles (La
+   Embajada and the deck) sit on the owner's right, so the opponent's
+   show on the left -- like a real mat seen from across the table. */
+.side {
+  display: grid;
+  grid-template-columns: 76px auto 76px;
+  justify-content: center;
+  column-gap: 8px;
+  row-gap: 6px;
+  padding: 8px;
+  margin-bottom: 6px;
+  background: #191c24;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.field-row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Square zones, so a card fits both upright (Campaign) and sideways
+   (Resistance, like defense position). */
+.slot {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  flex: 0 0 auto;
+  border-radius: 8px;
+  border: 2px solid rgba(201, 162, 39, 0.16);
+  background: radial-gradient(circle at 50% 50%, #20242f 0%, #171a22 75%);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.slot--backroom {
+  height: 96px;
+  border-color: rgba(168, 50, 50, 0.18);
+}
+
+.slot--empty {
+  border-style: dashed;
+}
+
+.slot-label {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 0.7em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+/* A card sitting in a zone: centred and drawn smaller than in the hand
+   (keep SLOT_CARD_SCALE in renderBoard.ts in sync). Sideways = Resistance. */
+.slot-card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0.72);
+}
+
+.slot-card--sideways {
+  transform: translate(-50%, -50%) rotate(90deg) scale(0.72);
+}
+
+/* Change stance: the card turns in its zone, like switching battle
+   position. Played once, on the render that first shows the new stance. */
+.slot-card--turn-to-sideways {
+  animation: stance-to-sideways 420ms cubic-bezier(0.2, 0.8, 0.3, 1.1);
+}
+
+.slot-card--turn-to-upright {
+  animation: stance-to-upright 420ms cubic-bezier(0.2, 0.8, 0.3, 1.1);
+}
+
+@keyframes stance-to-sideways {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg) scale(0.72);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(90deg) scale(0.72);
+  }
+}
+
+@keyframes stance-to-upright {
+  from {
+    transform: translate(-50%, -50%) rotate(90deg) scale(0.72);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(0deg) scale(0.72);
+  }
+}
+
+.slot--backroom .slot-card {
+  transform: translate(-50%, -50%) scale(0.5);
+}
+
+/* --- Cards ------------------------------------------------------------- */
+
+.card {
+  --frame: var(--panel-border);
+  position: relative;
+  width: 116px;
+  height: 182px;
+  flex: 0 0 auto;
+  background: var(--panel);
+  border: 2px solid var(--frame);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  font-size: 0.72em;
+  cursor: default;
+  user-select: none;
+  -webkit-user-select: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease,
+    outline-color 0.15s ease;
+}
+
+.card--actor {
+  --frame: #b8923a;
+}
+
+.card--policy {
+  --frame: #3f8f5f;
+}
+
+.card--scandal {
+  --frame: #a83232;
+}
+
+.card--back {
+  --frame: #c9a227;
+  background: #121a33;
+}
+
+.card-art {
+  position: relative;
+  height: 84px;
+  flex: 0 0 auto;
+  border-bottom: 2px solid var(--frame);
+  background: #0f1117;
+}
+
+.card-art-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.card--back .card-art-img {
+  height: 100%;
+}
+
+.card-back-label {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  padding: 2px 0;
+  border-radius: 4px;
+  background: rgba(10, 14, 28, 0.88);
+  text-align: center;
+  font-size: 0.9em;
+  color: #e0b84a;
+}
+
+.card-body {
+  padding: 5px 6px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+}
+
+.card-name {
+  font-weight: bold;
+  line-height: 1.15;
+}
+
+/* "The Lifelong Generalissimo": tighter, so it (usually) stays on one line. */
+.card-name--long {
+  font-size: 0.88em;
+  letter-spacing: -0.01em;
+}
+
+.card-stats {
+  color: var(--accent-gold);
+  font-weight: bold;
+}
+
+.card-tag {
+  color: var(--text-dim);
+  font-size: 0.9em;
+  text-transform: capitalize;
+  /* One line always ("Establishment · Operator" would wrap). */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Effect text. Clamped as a safety net for the fixed card height; the
+   full text is always in the card's hover tooltip too. */
+.card-rules {
+  margin-top: 2px;
+  color: var(--text);
+  font-size: 0.9em;
+  line-height: 1.22;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Policies and Scandals have no stats line, so their text gets a 4th. */
+.card--policy .card-rules,
+.card--scandal .card-rules {
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+}
+
+/* Longer rules (or a two-line name above them): smaller type, one more line. */
+.card-rules--long {
+  font-size: 0.8em;
+  line-height: 1.16;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+}
+
+.card--policy .card-rules--long,
+.card--scandal .card-rules--long {
+  -webkit-line-clamp: 5;
+  line-clamp: 5;
+}
+
+.card-status {
+  margin-top: auto;
+  color: #cfd3de;
+  font-size: 0.88em;
+  font-style: italic;
+}
+
+.card-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(20, 22, 28, 0.85);
+  border: 1px solid var(--frame);
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+}
+
+.card-ribbon {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 1px 0;
+  text-align: center;
+  font-size: 0.85em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: rgba(20, 22, 28, 0.8);
+  color: var(--text-dim);
+}
+
+.card--resistance .card-art-img {
+  filter: saturate(0.55) brightness(0.85);
+}
+
+.card--hidden-from-opponent .card-art-img {
+  filter: grayscale(0.4) brightness(0.7);
+}
+
+.card.clickable {
+  cursor: pointer;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.card.clickable:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.5);
+  outline-color: var(--accent-gold);
+}
+
+.card.selected {
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 2px;
+}
+
+.card.draggable {
+  cursor: grab;
+  touch-action: none;
+}
+
+.hand-row {
+  display: flex;
+  gap: 10px;
+  padding: 12px 8px 10px;
+  flex-wrap: wrap;
+}
+
+.hand-slot {
+  position: relative;
+}
+
+/* The card whose action menu is open lifts out of the hand. */
+.hand-slot--open {
+  z-index: 50;
+}
+
+.hand-slot--open > .card {
+  transform: translateY(-14px);
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 2px;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.6);
+}
+
+.hand-hint {
+  margin-left: 10px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-style: italic;
+  color: var(--accent-gold);
+  opacity: 0.85;
+}
+
+/* Yu-Gi-Oh-style action menus: above a clicked hand card, or right at the
+   zone a card was dropped on (or a Set card that was clicked). */
+.hand-menu,
+.zone-menu {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 20px);
+  transform: translateX(-50%);
+  z-index: 51;
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  background: #262a37;
+  border: 1px solid var(--accent-gold);
+  border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.65);
+  animation: menu-pop 0.14s ease-out both;
+}
+
+.zone-menu {
+  bottom: calc(100% + 12px);
+}
+
+.hand-menu::after,
+.zone-menu::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  width: 12px;
+  height: 12px;
+  background: #262a37;
+  border-right: 1px solid var(--accent-gold);
+  border-bottom: 1px solid var(--accent-gold);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.hand-menu button,
+.zone-menu button {
+  padding: 7px 10px;
+  font-size: 0.85em;
+  text-align: left;
+}
+
+.menu-title {
+  font-weight: bold;
+  color: var(--accent-gold);
+  font-size: 0.9em;
+}
+
+.menu-note {
+  font-size: 0.78em;
+  font-style: italic;
+  color: #e0a28f;
+}
+
+@keyframes menu-pop {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%);
+  }
+}
+
+/* A card dropped onto a zone, waiting for you to choose how to play it. */
+.slot--placing {
+  z-index: 45;
+  border-style: solid;
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 20px rgba(201, 162, 39, 0.45);
+  animation: selectable-pulse 1.1s ease-in-out infinite;
+}
+
+.slot--placing .slot-card .card {
+  opacity: 0.92;
+}
+
+.menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+
+/* "Choose a target" step: the pickable zones pulse; the rest wait. */
+.selection-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin: 6px 0;
+  min-height: 30px;
+  padding: 2px 12px;
+  border-radius: 6px;
+  background: rgba(201, 162, 39, 0.14);
+  border: 1px solid var(--accent-gold);
+  color: var(--accent-gold);
+  font-size: 0.9em;
+}
+
+.selection-banner button {
+  padding: 3px 12px;
+  font-size: 0.85em;
+}
+
+.slot.selectable,
+.side.selectable {
+  cursor: pointer;
+  animation: selectable-pulse 1.1s ease-in-out infinite;
+}
+
+.slot.selectable:hover,
+.side.selectable:hover {
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 18px rgba(201, 162, 39, 0.55);
+}
+
+@keyframes selectable-pulse {
+  0%,
+  100% {
+    border-color: rgba(201, 162, 39, 0.35);
+  }
+  50% {
+    border-color: rgba(201, 162, 39, 0.95);
+  }
+}
+
+/* --- Drag and drop ------------------------------------------------------ */
+
+body.is-dragging,
+body.is-dragging * {
+  cursor: grabbing !important;
+}
+
+.card.drag-source {
+  opacity: 0.25;
+  transform: scale(0.96);
+}
+
+.drag-ghost {
+  position: fixed;
+  margin: 0;
+  z-index: 1000;
+  pointer-events: none;
+  will-change: transform;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.6), 0 0 0 2px rgba(201, 162, 39, 0.35);
+  transition: box-shadow 0.15s ease;
+}
+
+.drag-ghost.over-target {
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.6), 0 0 0 3px var(--accent-gold),
+    0 0 22px rgba(201, 162, 39, 0.65);
+}
+
+/* Sits inside the card (cards clip their overflow for the rounded art). */
+.drag-hint {
+  position: absolute;
+  left: 50%;
+  top: 58px;
+  z-index: 2;
+  transform: translate(-50%, -50%) scale(0.8);
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--accent-gold);
+  color: #1a1a1a;
+  border: 2px solid #1a1a1a;
+  font-weight: bold;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transition: opacity 0.12s ease, transform 0.12s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.drag-hint.visible {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* Dragging an Actor is always an attack: red pill instead of gold. */
+.drag-ghost--attack .drag-hint {
+  background: #d2322d;
+  color: #fff;
+}
+
+.drag-ghost--attack.over-target {
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.6), 0 0 0 3px #e05a3a, 0 0 22px rgba(224, 90, 58, 0.65);
+}
+
+/* --- Equips ----------------------------------------------------------- */
+
+.card-equips {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  display: flex;
+  gap: 3px;
+}
+
+.card-equip-chip {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid #3f8f5f;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+  background: #17372a;
+}
+
+.card-equip-chip .card-art-img {
+  transform: scale(1.35);
+}
+
+.card-stats--boosted {
+  color: #6fd08f;
+}
+
+.card-stats--lowered {
+  color: #f08a7a;
+}
+
+/* Any place the dragged card could legally go. */
+.slot.drop-candidate {
+  border-style: dashed;
+  border-color: rgba(201, 162, 39, 0.7);
+  animation: candidate-pulse 1.1s ease-in-out infinite;
+}
+
+.side.drop-candidate {
+  border-color: rgba(201, 162, 39, 0.35);
+  border-style: dashed;
+}
+
+/* The one it will land on if released now. */
+.slot.drop-hover {
+  border-style: solid;
+  border-color: var(--accent-gold);
+  background: #2a2e3b;
+  box-shadow: 0 0 22px rgba(201, 162, 39, 0.5);
+  animation: none;
+}
+
+.side.drop-hover {
+  border-style: solid;
+  border-color: var(--accent-gold);
+  box-shadow: inset 0 0 24px rgba(201, 162, 39, 0.18);
+}
+
+/* Red means "attack" -- only ever on the opponent's side. */
+.side--opponent .slot.drop-hover,
+.side--opponent.drop-hover {
+  border-color: #e05a3a;
+  box-shadow: 0 0 22px rgba(224, 90, 58, 0.55);
+}
+
+@keyframes candidate-pulse {
+  0%,
+  100% {
+    border-color: rgba(201, 162, 39, 0.35);
+  }
+  50% {
+    border-color: rgba(201, 162, 39, 0.95);
+  }
+}
+
+/* --- Arrivals ----------------------------------------------------------- */
+
+/* A card that just landed on the field drops in and settles. */
+.card.card-enter {
+  animation: card-land 0.42s cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+
+/* A freshly drawn card slides up into the hand. */
+.card.card-enter.card-draw {
+  animation: card-draw 0.45s cubic-bezier(0.2, 1.1, 0.4, 1) both;
+}
+
+@keyframes card-land {
+  0% {
+    opacity: 0;
+    transform: translateY(-18px) scale(1.15) rotate(-3deg);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes card-draw {
+  0% {
+    opacity: 0;
+    transform: translateY(40px) rotate(6deg);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .card.card-enter,
+  .card.card-enter.card-draw,
+  .slot.drop-candidate,
+  .slot.selectable,
+  .side.selectable,
+  .slot--placing,
+  .slot-card--turn-to-sideways,
+  .slot-card--turn-to-upright,
+  .hand-menu,
+  .zone-menu,
+  .headline-toast,
+  .election-chip,
+  .paper,
+  .ballot {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+.action-bar {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 16px 0;
+  flex-wrap: wrap;
+}
+
+.winner-banner {
+  text-align: center;
+  font-size: 1.4em;
+  color: var(--accent-gold);
+  margin: 20px 0;
+}
+
+.section-label {
+  color: var(--text-dim);
+  font-size: 0.8em;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 4px 0 0;
+}
+
+/* Tutorial / "How to Play" side panel */
+
+.tutorial-tab {
+  position: fixed;
+  top: 20px;
+  right: 0;
+  z-index: 20;
+  font: inherit;
+  font-size: 0.8em;
+  font-weight: bold;
+  letter-spacing: 0.03em;
+  padding: 10px 14px;
+  border: 1px solid var(--accent-gold);
+  border-right: none;
+  border-radius: 6px 0 0 6px;
+  background: var(--accent-gold);
+  color: #1a1a1a;
+}
+
+.tutorial-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 15;
+  width: min(340px, 100vw);
+  height: 100vh;
+  overflow-y: auto;
+  background: var(--panel);
+  border-left: 1px solid var(--panel-border);
+  padding: 56px 18px 24px;
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.35);
+}
+
+.tutorial-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.tutorial-header h2 {
+  margin: 0;
+  color: var(--accent-gold);
+  font-size: 1.1em;
+}
+
+.tutorial-close {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 1.3em;
+  line-height: 1;
+  padding: 2px 6px;
+}
+
+.tutorial-section {
+  margin-bottom: 20px;
+}
+
+.tutorial-section h3 {
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.8em;
+  margin: 0 0 8px;
+}
+
+.tutorial-section ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.9em;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.tutorial-section li {
+  margin-bottom: 6px;
+}
+
+.phase-guide-item {
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  background: #191c24;
+}
+
+.phase-guide-item.current {
+  border-color: var(--accent-gold);
+  background: #262a37;
+}
+
+.phase-guide-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.phase-guide-now {
+  font-size: 0.7em;
+  font-weight: bold;
+  letter-spacing: 0.05em;
+  color: #1a1a1a;
+  background: var(--accent-gold);
+  border-radius: 3px;
+  padding: 1px 6px;
+}
+
+.phase-guide-summary {
+  color: var(--text-dim);
+  font-size: 0.85em;
+  font-style: italic;
+  margin-bottom: 6px;
+}
+
+/* --- Mat layout: zone rows and piles ------------------------------------ */
+
+/* 5 zones (5 x 140 + 4 x 8 = 732px) + 2 piles (76px) + gaps fit the
+   960px app width; never let a zone row wrap onto a second line. */
+.side > .field-row {
+  grid-column: 2;
+  flex-wrap: nowrap;
+}
+
+.pile-cell {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+}
+
+.pile-cell--left {
+  grid-column: 1;
+}
+
+.pile-cell--right {
+  grid-column: 3;
+}
+
+.r1 {
+  grid-row: 1;
+}
+
+.r2 {
+  grid-row: 2;
+}
+
+/* --- La Embajada and the deck ------------------------------------------- */
+
+.pile {
+  position: relative;
+  width: 76px;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 2px dashed rgba(201, 162, 39, 0.28);
+  background: radial-gradient(circle at 50% 40%, #232735 0%, #171a22 80%);
+  color: var(--text-dim);
+  font: inherit;
+  cursor: default;
+}
+
+.pile--embassy {
+  cursor: pointer;
+  border-style: solid;
+  border-color: rgba(201, 162, 39, 0.4);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pile--embassy:hover,
+.pile--embassy:focus-visible {
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.2);
+  outline: none;
+}
+
+.pile-card {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  transform: translate(-50%, -50%) scale(0.52);
+  pointer-events: none;
+}
+
+.pile--deck .pile-card {
+  top: 42%;
+  transform: translate(-50%, -50%) scale(0.36);
+}
+
+.pile-label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 3px 2px;
+  background: rgba(16, 18, 24, 0.88);
+  font-size: 0.56em;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.pile-count {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: var(--accent-gold);
+  color: #1a1a1a;
+  font-size: 0.72em;
+  font-weight: bold;
+  text-align: center;
+}
+
+.pile--empty .pile-count {
+  background: #3a3f4f;
+  color: var(--text-dim);
+}
+
+/* The Embajada viewer */
+
+.viewer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(8, 9, 12, 0.72);
+}
+
+.viewer {
+  width: min(760px, 100%);
+  max-height: 86vh;
+  overflow-y: auto;
+  padding: 14px 18px 18px;
+  background: var(--panel);
+  border: 1px solid var(--accent-gold);
+  border-radius: 12px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+}
+
+.viewer-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.viewer-header h2 {
+  margin: 0;
+  color: var(--accent-gold);
+  font-size: 1.1em;
+}
+
+.viewer-count {
+  flex: 1;
+  color: var(--text-dim);
+  font-size: 0.8em;
+}
+
+.viewer-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.viewer-empty {
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* The Embassy picker (Presidential Pardon, the Lobbyist...): same viewer,
+   but every card is a button. */
+.viewer--picker .viewer-count {
+  color: var(--text);
+  font-size: 0.9em;
+}
+
+.viewer-card--pickable {
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background: none;
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.12s ease;
+}
+
+.viewer-card--pickable:hover,
+.viewer-card--pickable:focus-visible {
+  border-color: var(--accent-gold);
+  transform: translateY(-4px);
+  filter: none;
+}
+
+/* --- Titulares: the battle report --------------------------------------- */
+
+.middle {
+  position: relative;
+}
+
+/* Floats over the middle banner, growing upward over the opponent's
+   Actors. Clicks go straight through it. */
+.headline-toast {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% - 8px);
+  z-index: 35;
+  width: min(620px, 94%);
+  transform: translateX(-50%);
+  padding: 8px 14px 10px;
+  background: rgba(16, 18, 24, 0.95);
+  border: 1px solid var(--accent-gold);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+  font-size: 0.86em;
+  pointer-events: none;
+  animation: toast-in 220ms ease-out;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.headline-toast-title {
+  margin-bottom: 4px;
+  color: var(--accent-gold);
+  font-size: 0.72em;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.headline {
+  padding: 2px 0;
+  line-height: 1.35;
+}
+
+.headline--good {
+  color: #7fd49a;
+}
+
+.headline--bad {
+  color: #f08a7a;
+}
+
+.headline--scandal {
+  margin: 3px -6px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: #8e1f1f;
+  color: #fff;
+  font-weight: bold;
+}
+
+.headline--election {
+  margin: 3px -6px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: #5b4a12;
+  color: #fff3c4;
+  font-weight: bold;
+}
+
+.headline--turn {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--panel-border);
+  color: var(--text-dim);
+  font-size: 0.85em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.log-tab {
+  position: fixed;
+  top: 64px;
+  right: 0;
+  z-index: 20;
+  padding: 10px 14px;
+  border: 1px solid var(--accent-gold);
+  border-right: none;
+  border-radius: 6px 0 0 6px;
+  background: #262a37;
+  color: var(--accent-gold);
+  font: inherit;
+  font-size: 0.8em;
+  font-weight: bold;
+  letter-spacing: 0.03em;
+}
+
+.log-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 15;
+  width: min(360px, 100vw);
+  height: 100vh;
+  overflow-y: auto;
+  padding: 104px 18px 24px;
+  background: var(--panel);
+  border-left: 1px solid var(--panel-border);
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.35);
+}
+
+.log-panel-hint {
+  margin: 0 0 10px;
+  color: var(--text-dim);
+  font-size: 0.8em;
+}
+
+.log-lines .headline {
+  padding: 5px 0;
+  border-bottom: 1px solid #262a37;
+  font-size: 0.88em;
+}
+
+.log-lines .headline--turn {
+  border-bottom: none;
+}
+
+/* --- Field effects: hits and flights to La Embajada (fieldFx.ts) -------- */
+
+.fx-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  pointer-events: none;
+}
+
+/* Positioned exactly over the zone the card left; its .slot-card child
+   keeps the zone's own centering and scale. */
+.fx-card {
+  position: fixed;
+  transform-origin: 50% 50%;
+}
+
+.fx-scaler {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+}
+
+.fx-card--hit .card {
+  box-shadow: 0 0 0 3px #e74c3c, 0 0 22px 6px rgba(231, 76, 60, 0.75);
+}
+
+.fx-card--tribute .card {
+  box-shadow: 0 0 0 3px var(--accent-gold), 0 0 22px 6px rgba(201, 162, 39, 0.6);
+}
+
+/* Comic-book impact sign. */
+.fx-burst {
+  position: absolute;
+  left: 50%;
+  top: 38%;
+  z-index: 1;
+  padding: 3px 10px;
+  border: 3px solid #1c1b22;
+  border-radius: 6px;
+  background: #f4c542;
+  color: #1c1b22;
+  box-shadow: 3px 3px 0 #1c1b22;
+  font: 900 18px "Arial Black", Arial, sans-serif;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  transform: translate(-50%, -50%) rotate(-8deg);
+}
+
+.fx-burst--scandal {
+  background: #c0392b;
+  color: #fff5c2;
+}
+
+.fx-float {
+  position: fixed;
+  font-size: 1.5em;
+  font-weight: bold;
+  text-shadow: 0 2px 6px #000;
+  white-space: nowrap;
+}
+
+.fx-float--loss {
+  color: #ff7b6b;
+}
+
+.fx-float--gain {
+  color: #7fd49a;
+}
+
+/* A card is still flying here: keep the new top card hidden until it lands. */
+.pile--awaiting .pile-card {
+  opacity: 0;
+}
+
+/* --- Election Night ------------------------------------------------------ */
+
+.phase-text {
+  flex: 1;
+}
+
+.election-chip {
+  flex: 0 0 auto;
+  padding: 2px 8px;
+  border: 1px solid rgba(201, 162, 39, 0.5);
+  border-radius: 10px;
+  color: var(--accent-gold);
+  font-size: 0.85em;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.election-chip--close {
+  background: rgba(201, 162, 39, 0.15);
+  animation: chip-pulse 1.6s ease-in-out infinite;
+}
+
+.election-chip--runoff {
+  border-color: #e74c3c;
+  background: #5c1a1a;
+  color: #ffd9d2;
+  text-transform: uppercase;
+}
+
+@keyframes chip-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(201, 162, 39, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(201, 162, 39, 0.25);
+  }
+}
+
+/* Live poll: your share of the votes-if-counted-now. */
+.poll {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: none;
+  letter-spacing: 0;
+  cursor: help;
+}
+
+.poll-num {
+  min-width: 18px;
+  font-weight: bold;
+}
+
+.poll-num--you {
+  color: var(--accent-gold);
+}
+
+.poll-num--them {
+  color: #f08a7a;
+}
+
+.poll-bar {
+  position: relative;
+  width: 110px;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #a8323288;
+}
+
+.poll-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--accent-gold);
+  transition: width 0.5s ease;
+}
+
+.winner-banner button {
+  margin-left: 12px;
+  font-size: 0.7em;
+  vertical-align: middle;
+}
+
+/* The results screen: a newspaper front page. */
+.finale {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  overflow: hidden;
+  background: rgba(8, 9, 12, 0.72);
+}
+
+.paper {
+  position: relative;
+  z-index: 1;
+  width: min(560px, 100%);
+  max-height: 92vh;
+  overflow-y: auto;
+  padding: 18px 26px 22px;
+  background: #f2eee3;
+  color: #1c1b22;
+  border-radius: 4px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+  font-family: Georgia, "Times New Roman", serif;
+  transform: rotate(-1.2deg);
+  animation: paper-in 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.15);
+}
+
+@keyframes paper-in {
+  from {
+    opacity: 0;
+    transform: rotate(-14deg) scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(-1.2deg) scale(1);
+  }
+}
+
+.paper-masthead {
+  padding-bottom: 4px;
+  border-bottom: 3px double #1c1b22;
+  font-size: 2em;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+
+.paper-edition {
+  margin: 4px 0 10px;
+  color: #5a5448;
+  font-size: 0.75em;
+  letter-spacing: 0.14em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.paper-headline {
+  margin: 6px 0;
+  color: #1f6b3a;
+  font-family: "Arial Black", Arial, sans-serif;
+  font-size: 1.9em;
+  line-height: 1.05;
+  text-align: center;
+}
+
+.paper-headline--lost {
+  color: #a82020;
+}
+
+.paper-deck {
+  margin: 0 0 12px;
+  font-style: italic;
+  text-align: center;
+}
+
+.paper-count {
+  padding: 10px 12px;
+  border: 1px solid #b9b2a2;
+  background: #e8e2d3;
+}
+
+.count-title {
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.count-status {
+  margin: 2px 0 8px;
+  color: #5a5448;
+  font-size: 0.8em;
+}
+
+.count-row {
+  display: grid;
+  grid-template-columns: 76px 1fr 40px;
+  align-items: center;
+  gap: 8px;
+  margin: 5px 0;
+}
+
+.count-bar {
+  height: 16px;
+  overflow: hidden;
+  border: 1px solid #1c1b22;
+  background: #fff;
+}
+
+.count-fill {
+  width: 0;
+  height: 100%;
+  background: #a82020;
+  transition: width 0.7s ease-out;
+}
+
+.count-fill--you {
+  background: #c9a227;
+}
+
+.count-number {
+  font-weight: bold;
+  font-size: 1.15em;
+  text-align: right;
+}
+
+.count-breakdown {
+  margin-top: 6px;
+  color: #5a5448;
+  font-size: 0.8em;
+}
+
+.paper-note {
+  margin: 10px 0 0;
+  text-align: center;
+  font-weight: bold;
+}
+
+.paper-note--hot {
+  color: #a82020;
+}
+
+.paper-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+/* Winners get a shower of ballots. */
+.ballots {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ballot {
+  position: absolute;
+  top: -20px;
+  width: 10px;
+  height: 14px;
+  border: 1px solid #1c1b22;
+  background: #fdf6e3;
+  animation-name: ballot-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.ballot--1 {
+  background: #f4c542;
+}
+
+.ballot--2 {
+  background: #8fd18a;
+}
+
+@keyframes ballot-fall {
+  from {
+    transform: translateY(0) rotate(0deg);
+  }
+  to {
+    transform: translateY(110vh) rotate(540deg);
+  }
+}
+
+/* --- Phone layout (landscape): one fixed-size stage, scaled to fit ------ */
+/* stage.ts sets the transform; keep STAGE_WIDTH/STAGE_HEIGHT in sync.      */
+
+body.phone-layout {
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.board--phone {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 1340px;
+  height: 604px;
+  transform-origin: 0 0;
+  display: grid;
+  grid-template-columns: 172px 916px 240px;
+  grid-template-rows: 34px 262px 36px 262px;
+  column-gap: 6px;
+  row-gap: 3px;
+  grid-template-areas:
+    "header header handlabel"
+    "opp oppside hand"
+    "middle middle hand"
+    "you yourside hand";
+  touch-action: manipulation;
+}
+
+.board--phone > .board-header {
+  grid-area: header;
+  justify-content: flex-start;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 12px;
+  margin: 0;
+  min-width: 0;
+}
+
+.board--phone .board-header h1 {
+  font-size: 1.2em;
+}
+
+.board--phone .board-header .status-line {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.board--phone > .duelist-strip {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+  margin: 0;
+  padding: 10px;
+  min-width: 0;
+}
+
+.board--phone > .duelist-strip--opponent {
+  grid-area: opp;
+}
+
+.board--phone > .duelist-strip--you {
+  grid-area: you;
+}
+
+.board--phone .duelist-info {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.board--phone .duelist-info strong {
+  font-size: 1.05em;
+}
+
+.board--phone .duelist-right {
+  flex-direction: column-reverse;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.board--phone .mandate {
+  font-size: 1.6em;
+  text-align: center;
+}
+
+/* Advance Phase: the big thumb button, bottom-left. */
+.board--phone .duelist-right button {
+  min-height: 64px;
+  font-size: 1.05em;
+}
+
+.board--phone > .side {
+  margin: 0;
+}
+
+.board--phone > .side--opponent {
+  grid-area: oppside;
+}
+
+.board--phone > .side--yours {
+  grid-area: yourside;
+}
+
+.board--phone > .middle {
+  grid-area: middle;
+}
+
+.board--phone .phase-banner,
+.board--phone .selection-banner {
+  margin: 0;
+  height: 36px;
+  min-height: 0;
+}
+
+.board--phone > .section-label {
+  grid-area: handlabel;
+  align-self: end;
+  margin: 0;
+}
+
+.board--phone .hand-hint {
+  display: none;
+}
+
+/* The hand: two overlapping columns, the newest card at the bottom. */
+.board--phone > .hand-row {
+  grid-area: hand;
+  display: grid;
+  grid-template-columns: 116px 116px;
+  grid-auto-rows: var(--hand-pitch, 190px);
+  column-gap: 8px;
+  padding: 0;
+  align-content: start;
+}
+
+.board--phone .hand-slot {
+  height: var(--hand-pitch, 190px);
+}
+
+/* Menus for hand cards open to the left, onto the board. */
+.board--phone .hand-menu {
+  left: auto;
+  right: calc(100% + 14px);
+  bottom: auto;
+  top: 0;
+  transform: none;
+}
+
+.board--phone > .winner-banner {
+  position: absolute;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  margin: 0;
+  padding: 8px 16px;
+  background: var(--panel);
+  border: 1px solid var(--accent-gold);
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+/* Short screens: tighter menus. */
+@media (max-height: 520px) {
+  .app-title {
+    font-size: 1.8em;
+    margin: 8px 0 0;
+  }
+
+  .menu .subtitle {
+    margin-bottom: 10px;
+  }
+
+  .menu-panel {
+    padding: 14px;
+    gap: 10px;
+  }
+
+  .menu-choice {
+    min-height: 52px;
+    padding: 7px 10px;
+  }
+}
+
+/* --- Card inspector (long-press / right-click) --------------------------- */
+
+.inspect-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px))
+    max(12px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+  background: rgba(8, 9, 12, 0.78);
+  animation: inspect-in 140ms ease-out;
+}
+
+.inspect-box {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+/* The card at 1.6x (its box sized to match, so the layout doesn't overlap). */
+.inspect-card {
+  width: calc(116px * 1.6);
+  height: calc(182px * 1.6);
+  flex: 0 0 auto;
+}
+
+.inspect-card > .card {
+  transform: scale(1.6);
+  transform-origin: 0 0;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
+}
+
+.inspect-text {
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inspect-text h2 {
+  margin: 0;
+  color: var(--accent-gold);
+  font-size: 1.3em;
+}
+
+.inspect-tag {
+  color: var(--text-dim);
+  text-transform: capitalize;
+}
+
+.inspect-stats {
+  color: var(--accent-gold);
+  font-weight: bold;
+}
+
+.inspect-rules {
+  margin: 0;
+  font-size: 1.05em;
+  line-height: 1.4;
+}
+
+.inspect-flavor {
+  margin: 0;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+.inspect-close {
+  margin-top: 6px;
+  font-size: 0.8em;
+  color: var(--text-dim);
+  opacity: 0.8;
+}
+
+@keyframes inspect-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (max-height: 420px) {
+  .inspect-card {
+    width: calc(116px * 1.35);
+    height: calc(182px * 1.35);
+  }
+
+  .inspect-card > .card {
+    transform: scale(1.35);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inspect-backdrop {
+    animation: none;
+  }
+}
+
+/* Phone layout: "How to Play" and the Headlines tab become small tabs in
+   the stage's header row (positioned in stage coordinates). */
+body.phone-layout .tutorial-tab,
+body.phone-layout .log-tab {
+  top: var(--stage-top, 0px);
+  right: auto;
+  transform: scale(var(--stage-scale, 1));
+  transform-origin: 0 0;
+  padding: 6px 12px;
+  border: 1px solid var(--accent-gold);
+  border-radius: 6px;
+  font-size: 15px;
+}
+
+body.phone-layout .tutorial-tab {
+  left: calc(var(--stage-left, 0px) + 960px * var(--stage-scale, 1));
+}
+
+body.phone-layout .log-tab {
+  left: calc(var(--stage-left, 0px) + 830px * var(--stage-scale, 1));
+}
+
+.board--phone > .board-header {
+  padding-right: 270px;
+}
+
+.board--phone .headline-toast {
+  width: min(560px, 70%);
+}
+
+/* The pointer under a hand menu makes no sense once it opens sideways. */
+.board--phone .hand-menu::after {
+  display: none;
+}
+
+/* Phone layout: side panels a bit narrower and in smaller type. */
+body.phone-layout .tutorial-panel,
+body.phone-layout .log-panel {
+  width: min(320px, 46vw);
+  font-size: 13px;
+  padding-top: 44px;
+}

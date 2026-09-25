@@ -1,0 +1,8 @@
+{
+  "appId": "com.palacio.duel",
+  "appName": "PALACIO",
+  "webDir": "dist",
+  "android": {
+    "backgroundColor": "#14161c"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "name": "@project-palacio/duel-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./protocol-version": "./src/protocol/version.ts",
+    "./offline": "./src/offline.ts"
+  },
+  "scripts": {
+    "start": "tsx src/server.ts",
+    "dev": "tsx watch src/server.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "smoke-test": "node scripts/smoke-test.mjs",
+    "balance": "tsx scripts/balance-sim.ts",
+    "docs:cards": "tsx scripts/generate-card-docs.ts"
+  },
+  "dependencies": {
+    "@project-palacio/duel-content": "workspace:*",
+    "@project-palacio/duel-engine": "workspace:*",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/ws": "^8.5.10",
+    "tsx": "^4.19.0",
+    "vitest": "^4.1.11"
+  }
+}

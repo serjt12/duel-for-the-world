@@ -1,0 +1,182 @@
+import { CARDS, cardsOfEdition } from "@project-palacio/duel-content";
+import type { ActorCardId, CardId, Edition } from "@project-palacio/duel-content";
+import {
+  activatePolicy,
+  activateSetPolicy,
+  advancePhase,
+  changeStance,
+  createDuel,
+  declareAttack,
+  deployActor,
+  setPolicy,
+  setScandal,
+} from "@project-palacio/duel-engine";
+import type { DuelistId, DuelState } from "@project-palacio/duel-engine";
+import type { PlayerAction } from "../protocol/Messages";
+import { shuffle } from "./shuffle";
+
+export type PlayerSlot = DuelistId;
+
+export type ActionResult = { ok: true } | { ok: false; reason: string };
+
+// The default deck every player uses until deck-building exists, per
+// edition. Built from the content pool, so new cards join automatically.
+// Listed in a fixed order; the room shuffles it (see the constructor).
+//
+// - Edición Colombia (34 cards): 2 of each Grassroots Actor, 1 of each
+//   Establishment Actor, 1 of each Policy and Scandal.
+// - World Edition (40 cards): 2 of each common and 1 of each uncommon
+//   Grassroots Actor, 1 of each Establishment Actor, WORLD_LEADERS_PER_DECK
+//   Leaders picked at random (a different head of state each duel), 1 of
+//   each Policy and Scandal.
+export const GRASSROOTS_COPIES = 2;
+export const WORLD_LEADERS_PER_DECK = 2;
+
+export function buildDefaultDeck(edition: Edition, random: () => number = Math.random): CardId[] {
+  const pool = cardsOfEdition(edition);
+  const deck: CardId[] = [];
+  const leaders: ActorCardId[] = [];
+
+  for (const id of pool) {
+    const card = CARDS[id];
+    if (card.category !== "actor") continue;
+    if (card.tier === "leader") {
+      leaders.push(card.id);
+      continue;
+    }
+    const copies =
+      card.tier !== "grassroots" ? 1 : edition === "world" && card.rarity === "uncommon" ? 1 : GRASSROOTS_COPIES;
+    for (let i = 0; i < copies; i += 1) deck.push(card.id);
+  }
+  deck.push(...shuffle(leaders, random).slice(0, WORLD_LEADERS_PER_DECK));
+  deck.push(...pool.filter((id) => CARDS[id].category === "policy"));
+  deck.push(...pool.filter((id) => CARDS[id].category === "scandal"));
+
+  return deck;
+}
+
+/**
+ * A single authoritative duel. This is the server-side boundary that keeps
+ * clients from ever running the rules themselves: a connected client sends
+ * a PlayerAction, the room checks whose turn it actually is and hands off
+ * to duel-engine, and the (possibly rejected) result is all the caller
+ * gets back. Two PlayerSlots (duelist1/duelist2) are handed out on a
+ * first-come basis via join().
+ */
+export class DuelRoom {
+  // Replaced (not mutated) when a rematch starts a fresh duel.
+  state: DuelState;
+  // Which card set this room plays with (fixed for the room's lifetime).
+  readonly edition: Edition;
+  private readonly newDuel: () => DuelState;
+  private readonly rematchRequests = new Set<PlayerSlot>();
+  private readonly filledSlots: Record<PlayerSlot, boolean> = {
+    duelist1: false,
+    duelist2: false,
+  };
+
+  /**
+   * Explicit decks are used exactly as given, in draw order (tests rely on
+   * that). Omitted decks get the default deck, shuffled -- otherwise its
+   * fixed listing order would bury the Policy/Scandal cards at the bottom
+   * where nobody draws them for many turns. `random` is
+   * injectable so tests can pin the shuffle.
+   */
+  constructor(
+    deck1?: CardId[],
+    deck2?: CardId[],
+    random: () => number = Math.random,
+    edition: Edition = "world",
+  ) {
+    this.edition = edition;
+    this.newDuel = () =>
+      createDuel(
+        deck1 ? [...deck1] : shuffle(buildDefaultDeck(edition, random), random),
+        deck2 ? [...deck2] : shuffle(buildDefaultDeck(edition, random), random),
+      );
+    this.state = this.newDuel();
+  }
+
+  /** Who has asked for a rematch (only meaningful once the duel is over). */
+  rematchVotes(): PlayerSlot[] {
+    return [...this.rematchRequests].sort();
+  }
+
+  // Either player may ask once the duel is over; when both have, a fresh
+  // duel (re-shuffled decks) starts in the same room.
+  private requestRematch(playerSlot: PlayerSlot): ActionResult {
+    if (!this.state.winnerId) {
+      return { ok: false, reason: "duel-not-over" };
+    }
+    this.rematchRequests.add(playerSlot);
+    if (this.rematchRequests.size === 2) {
+      this.rematchRequests.clear();
+      this.state = this.newDuel();
+    }
+    return { ok: true };
+  }
+
+  // Assigns the next open player slot, or null once both are taken.
+  join(): PlayerSlot | null {
+    if (!this.filledSlots.duelist1) {
+      this.filledSlots.duelist1 = true;
+      return "duelist1";
+    }
+
+    if (!this.filledSlots.duelist2) {
+      this.filledSlots.duelist2 = true;
+      return "duelist2";
+    }
+
+    return null;
+  }
+
+  isFull(): boolean {
+    return this.filledSlots.duelist1 && this.filledSlots.duelist2;
+  }
+
+  applyAction(playerSlot: PlayerSlot, action: PlayerAction): ActionResult {
+    // `action` arrives as parsed JSON from an untrusted client: the type
+    // annotation describes what a well-behaved client sends, not a
+    // guarantee. Anything malformed must be rejected here, never allowed
+    // to throw -- an exception in here would take the whole server down.
+    if (typeof action !== "object" || action === null) {
+      return { ok: false, reason: "invalid-action" };
+    }
+
+    // A rematch can be asked for by either player, whoever's turn it was.
+    if (action.type === "rematch") {
+      return this.requestRematch(playerSlot);
+    }
+
+    if (this.state.winnerId) {
+      return { ok: false, reason: "duel-over" };
+    }
+
+    if (playerSlot !== this.state.activeDuelistId) {
+      return { ok: false, reason: "not-your-turn" };
+    }
+
+    switch (action.type) {
+      case "advance-phase":
+        advancePhase(this.state);
+        return { ok: true };
+      case "deploy-actor":
+        return deployActor(this.state, action.actorCardId, action.options);
+      case "declare-attack":
+        return declareAttack(this.state, action.attackerInstanceId, action.targetInstanceId);
+      case "activate-policy":
+        return activatePolicy(this.state, action.policyCardId, action.options ?? {});
+      case "set-policy":
+        return setPolicy(this.state, action.policyCardId, action.zone);
+      case "activate-set-policy":
+        return activateSetPolicy(this.state, action.instanceId, action.options ?? {});
+      case "set-scandal":
+        return setScandal(this.state, action.scandalCardId, action.zone);
+      case "change-stance":
+        return changeStance(this.state, action.instanceId, action.options ?? {});
+      default:
+        return { ok: false, reason: "unknown-action" };
+    }
+  }
+}

@@ -3,11 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@11.24.0",
   "scripts": {
-    "dev": "pnpm --filter @project-palacio/web dev",
-    "build": "pnpm -r build",
-    "typecheck": "pnpm -r typecheck"
+    "dev": "pnpm --parallel --filter @project-palacio/duel-server --filter @project-palacio/duel-web run dev",
+    "duel": "pnpm run dev",
+    "test": "pnpm -r --if-present run test",
+    "typecheck": "pnpm -r --if-present run typecheck",
+    "build": "pnpm --filter @project-palacio/duel-web build",
+    "balance": "pnpm --filter @project-palacio/duel-server balance",
+    "docs:cards": "pnpm --filter @project-palacio/duel-server docs:cards",
+    "android:run": "pnpm --filter @project-palacio/duel-web android:run",
+    "android:sync": "pnpm --filter @project-palacio/duel-web android:sync",
+    "android:open": "pnpm --filter @project-palacio/duel-web android:open"
   },
   "devDependencies": {
     "typescript": "^7.0.2"
