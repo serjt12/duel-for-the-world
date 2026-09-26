@@ -1,11 +1,6 @@
 # Fly.io deployment for the online-play game server (packages/duel-server).
 # See docs/SERVER.md for the full deploy walkthrough.
-#
-# `app` must be globally unique across every Fly account, not just yours --
-# `duel-for-the-world` is very likely already taken. Change it before your
-# first deploy (or let `fly launch` pick one interactively); everything
-# else here can stay as is.
-app = "duel-for-the-world"
+app = "project-palacio"
 primary_region = "iad" # Virginia -- closest Fly region to Colombia with no latency surprises for a turn-based game
 
 [build]

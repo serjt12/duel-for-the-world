@@ -1,3 +1,4 @@
+import { createServer } from "node:http";
 import { pathToFileURL } from "node:url";
 import { WebSocketServer } from "ws";
 import type { WebSocket } from "ws";
@@ -331,7 +332,23 @@ function handleClose(socket: WebSocket): void {
 }
 
 export function startServer(port: number = PORT): WebSocketServer {
-  const wss = new WebSocketServer({ port });
+  // An explicit HTTP server in front of the WebSocket upgrade, rather than
+  // letting WebSocketServer make its own bare one, so a plain GET (a load
+  // balancer's health check, or just someone opening the URL in a
+  // browser) gets a real 200 instead of hanging forever. Fly.io's proxy
+  // in particular healthchecks over HTTP before it will route any traffic
+  // to a machine -- a service that only ever answers WebSocket upgrades
+  // reads to it as unhealthy, and every connection gets reset before the
+  // handshake completes even though the process itself is up and logging
+  // fine. (This is exactly what happened the first time this went out:
+  // `fly logs` showed "duel-server listening..." while every wss://
+  // connection died with code 1006.)
+  const httpServer = createServer((_req, res) => {
+    res.writeHead(200, { "Content-Type": "text/plain" });
+    res.end("duel-server: ok\n");
+  });
+  const wss = new WebSocketServer({ server: httpServer });
+  httpServer.listen(port);
 
   wss.on("connection", (socket: WebSocket & { isAlive?: boolean }) => {
     socket.isAlive = true;
@@ -379,6 +396,7 @@ export function startServer(port: number = PORT): WebSocketServer {
   wss.on("close", () => {
     clearInterval(heartbeat);
     clearInterval(idleSweep);
+    httpServer.close();
   });
 
   return wss;
