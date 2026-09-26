@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { CARDS, cardsOfEdition } from "@project-palacio/duel-content";
 import type { ActorCardId, CardId, Edition } from "@project-palacio/duel-content";
 import {
@@ -74,6 +75,21 @@ export class DuelRoom {
     duelist1: false,
     duelist2: false,
   };
+  // A per-slot secret handed out once, when that slot is first taken (by
+  // join() or a later reconnect() -- see below). Whoever holds it can
+  // reclaim that slot after a dropped connection: the socket layer
+  // (server.ts) is what actually drops and re-associates connections, but
+  // it needs somewhere to check a presented token against the slot it
+  // claims to belong to, and that's here, next to the rest of "who is in
+  // this room."
+  private readonly tokens: Partial<Record<PlayerSlot, string>> = {};
+  // Whether each taken slot currently has a live socket. A slot can be
+  // filled (join() was called) but not connected (its socket dropped and
+  // hasn't rejoined yet).
+  private readonly connectedSlots: Record<PlayerSlot, boolean> = {
+    duelist1: false,
+    duelist2: false,
+  };
 
   /**
    * Explicit decks are used exactly as given, in draw order (tests rely on
@@ -116,23 +132,66 @@ export class DuelRoom {
     return { ok: true };
   }
 
-  // Assigns the next open player slot, or null once both are taken.
+  // Assigns the next open player slot, or null once both are taken. Also
+  // mints that slot's reconnect token and marks it connected.
   join(): PlayerSlot | null {
+    let slot: PlayerSlot | null = null;
+
     if (!this.filledSlots.duelist1) {
       this.filledSlots.duelist1 = true;
-      return "duelist1";
-    }
-
-    if (!this.filledSlots.duelist2) {
+      slot = "duelist1";
+    } else if (!this.filledSlots.duelist2) {
       this.filledSlots.duelist2 = true;
-      return "duelist2";
+      slot = "duelist2";
     }
 
-    return null;
+    if (slot) {
+      this.tokens[slot] = randomUUID();
+      this.connectedSlots[slot] = true;
+    }
+
+    return slot;
   }
 
   isFull(): boolean {
     return this.filledSlots.duelist1 && this.filledSlots.duelist2;
+  }
+
+  /** The reconnect token for a slot that's already been join()ed. */
+  tokenFor(slot: PlayerSlot): string | undefined {
+    return this.tokens[slot];
+  }
+
+  /**
+   * Reclaims a slot from a presented reconnect token: marks it connected
+   * again and returns which slot it was. Returns null for an unrecognized
+   * token so the caller can reject the attempt without knowing (or caring)
+   * which slots exist.
+   */
+  reconnect(token: string): PlayerSlot | null {
+    for (const slot of ["duelist1", "duelist2"] as const) {
+      if (this.tokens[slot] === token) {
+        this.connectedSlots[slot] = true;
+        return slot;
+      }
+    }
+    return null;
+  }
+
+  /** Marks a slot's socket as gone (its reconnect token still stands). */
+  disconnectSlot(slot: PlayerSlot): void {
+    this.connectedSlots[slot] = false;
+  }
+
+  isSlotConnected(slot: PlayerSlot): boolean {
+    return this.connectedSlots[slot];
+  }
+
+  /** True once every slot that's ever been filled has gone quiet. */
+  allFilledSlotsDisconnected(): boolean {
+    return (["duelist1", "duelist2"] as const).every(
+      (slot) => !this.filledSlots[slot] || !this.connectedSlots[slot],
+    );
   }
 
   applyAction(playerSlot: PlayerSlot, action: PlayerAction): ActionResult {

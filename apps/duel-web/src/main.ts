@@ -7,5 +7,7 @@ if (!appRoot) {
 }
 
 // The online server: set VITE_SERVER_URL (e.g. wss://your-server) when
-// building for a phone; local development uses ws://localhost:8080.
-startApp(appRoot, import.meta.env.VITE_SERVER_URL || undefined);
+// building for a phone; local development uses ws://localhost:8080. A
+// release build with no server set has no online play yet ("coming soon").
+const serverUrl = import.meta.env.VITE_SERVER_URL || (import.meta.env.DEV ? undefined : null);
+startApp(appRoot, serverUrl);

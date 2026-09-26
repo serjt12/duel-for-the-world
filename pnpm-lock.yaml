@@ -39,6 +39,9 @@ importers:
       vite:
         specifier: ^8.2.2
         version: 8.2.2(@types/node@26.6.2)(esbuild@0.28.2)(tsx@4.23.15)
+      vitest:
+        specifier: ^4.1.11
+        version: 4.1.11(@types/node@26.6.2)(vite@8.2.2(@types/node@26.6.2)(esbuild@0.28.2)(tsx@4.23.15))
 
   packages/duel-content:
     devDependencies:

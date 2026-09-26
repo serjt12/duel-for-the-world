@@ -1,6 +1,6 @@
 {
-  "appId": "com.palacio.duel",
-  "appName": "PALACIO",
+  "appId": "com.jandreus.duelfortheworld",
+  "appName": "Duel for the World",
   "webDir": "dist",
   "android": {
     "backgroundColor": "#14161c"

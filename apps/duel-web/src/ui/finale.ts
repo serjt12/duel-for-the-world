@@ -1,4 +1,5 @@
 import type { DuelEvent, DuelistId, VoteCount } from "@project-palacio/duel-engine";
+import { playCrowdReaction } from "../audio/sound";
 import type { GameClient } from "../net/GameClient";
 import type { ClientState } from "../state/ClientState";
 import { el } from "./dom";
@@ -106,7 +107,11 @@ function build(state: ClientState, client: GameClient, rerender: () => void): HT
         window.setTimeout(() => {
           rows.forEach((r) => r.set(share, max));
           status.textContent = share === 1 ? words.finalBulletin : words.bulletin(index + 1, Math.round(share * 100));
-          if (share === 1) breakdown.style.visibility = "visible";
+          if (share === 1) {
+            breakdown.style.visibility = "visible";
+            // The final result is in: the crowd reacts.
+            playCrowdReaction(won ? "cheer" : "groan");
+          }
         }, 250 + index * BULLETIN_MS),
       );
     });
@@ -118,6 +123,7 @@ function build(state: ClientState, client: GameClient, rerender: () => void): HT
       ]),
     ]);
     children.push(mandate);
+    timers.push(window.setTimeout(() => playCrowdReaction(won ? "cheer" : "groan"), 900));
   }
 
   // Rematch: both players must ask.
@@ -129,6 +135,8 @@ function build(state: ClientState, client: GameClient, rerender: () => void): HT
     : theyAsked
       ? "Your opponent wants a rematch!"
       : null;
+  // The tutorial ends here: its "rematch" is a first real duel.
+  const guide = state.guide !== null;
   children.push(
     note ? el("p", { className: `paper-note${theyAsked && !youAsked ? " paper-note--hot" : ""}` }, [note]) : null,
     el("div", { className: "paper-actions" }, [
@@ -139,7 +147,7 @@ function build(state: ClientState, client: GameClient, rerender: () => void): HT
           disabled: youAsked,
           onclick: () => client.sendAction({ type: "rematch" }),
         },
-        [theyAsked && !youAsked ? `${words.rematch} Accept` : words.rematch],
+        [guide ? "Play vs Computer" : theyAsked && !youAsked ? `${words.rematch} Accept` : words.rematch],
       ),
       el(
         "button",

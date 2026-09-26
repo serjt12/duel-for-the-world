@@ -1,4 +1,4 @@
-# How to play PALACIO
+# How to play Duel for the World
 
 Two politicians duel for power. Win by bringing your rival's **Mandate** to 0,
 or by leading the count on **Election Night**.

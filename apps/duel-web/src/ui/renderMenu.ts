@@ -1,13 +1,18 @@
 import type { Edition } from "@project-palacio/duel-content";
+import { isGuideDone } from "../guide/coach";
 import type { AiLevel, ClientState } from "../state/ClientState";
 import { el } from "./dom";
+import { EMBLEM_URL, GAME_NAME, GAME_TAGLINE } from "./brand";
 import { flavorOf } from "./flavor";
 
-// The main menu: where the app opens. Play the computer (offline), play a
-// person online, or read How to Play.
+// The main menu: where the app opens. The tutorial (first until it's been
+// finished once), play the computer (offline), play a person online, or
+// read How to Play.
 
 export interface MenuActions {
-  startVsComputer(): void;
+  // `level`: this once, instead of the level picked on the menu.
+  startVsComputer(level?: AiLevel): void;
+  startTutorial(): void;
   goOnline(): void;
   openHowToPlay(): void;
 }
@@ -57,7 +62,16 @@ function choice(label: string, blurb: string, selected: boolean, onPick: () => v
 }
 
 export function renderMenu(state: ClientState, rerender: () => void, actions: MenuActions): HTMLElement {
-  const title = [el("h1", { className: "app-title" }, ["PALACIO"]), el("p", { className: "subtitle" }, ["The Political Card Duel"])];
+  const title = [
+    // On the setup screen the name shrinks to leave room for the choices.
+    el("div", { className: `brand${state.menuStep === "main" ? "" : " brand--compact"}` }, [
+      el("img", { className: "brand-emblem", src: EMBLEM_URL, alt: "" }),
+      el("div", { className: "brand-words" }, [
+        el("h1", { className: "app-title" }, [GAME_NAME]),
+        el("p", { className: "subtitle brand-tagline" }, [GAME_TAGLINE]),
+      ]),
+    ]),
+  ];
 
   if (state.menuStep === "vs-computer") {
     const pickLevel = (level: AiLevel) => () => {
@@ -107,13 +121,21 @@ export function renderMenu(state: ClientState, rerender: () => void, actions: Me
     ]);
   }
 
+  // New players start with the tutorial; afterwards it moves down with How to Play.
+  const firstTime = !isGuideDone();
+  const tutorial = el(
+    "button",
+    { className: firstTime ? "primary menu-big" : "menu-big menu-big--quiet", onclick: () => actions.startTutorial() },
+    firstTime ? [el("span", {}, ["Tutorial"]), el("span", { className: "menu-big-blurb" }, ["Your first duel, step by step"])] : ["Tutorial"],
+  );
   return el("div", { className: "menu" }, [
     ...title,
     el("div", { className: "menu-panel" }, [
+      firstTime ? tutorial : null,
       el(
         "button",
         {
-          className: "primary menu-big",
+          className: firstTime ? "menu-big" : "primary menu-big",
           onclick: () => {
             state.menuStep = "vs-computer";
             rerender();
@@ -121,8 +143,27 @@ export function renderMenu(state: ClientState, rerender: () => void, actions: Me
         },
         ["Play vs Computer"],
       ),
-      el("button", { className: "menu-big", onclick: () => actions.goOnline() }, ["Play Online"]),
-      el("button", { className: "menu-big menu-big--quiet", onclick: () => actions.openHowToPlay() }, ["How to Play"]),
+      state.onlineAvailable
+        ? el("button", { className: "menu-big", onclick: () => actions.goOnline() }, ["Play Online"])
+        : el("button", { className: "menu-big", disabled: true }, [
+            el("span", {}, ["Play Online"]),
+            el("span", { className: "menu-big-blurb" }, ["Coming soon"]),
+          ]),
+      el("div", { className: "menu-row" }, [
+        firstTime ? null : tutorial,
+        el("button", { className: "menu-big menu-big--quiet", onclick: () => actions.openHowToPlay() }, ["How to Play"]),
+        el(
+          "button",
+          {
+            className: "menu-big menu-big--quiet",
+            onclick: () => {
+              state.settingsOpen = true;
+              rerender();
+            },
+          },
+          ["Settings"],
+        ),
+      ]),
     ]),
   ]);
 }

@@ -1,8 +1,8 @@
-import type { Edition } from "@project-palacio/duel-content";
+import type { CardId, Edition } from "@project-palacio/duel-content";
 import type { DuelistId } from "@project-palacio/duel-engine";
 import type { PlayerAction, PublicDuelState } from "@project-palacio/duel-server";
 import { AiPlayer, DuelRoom, redactStateFor } from "@project-palacio/duel-server/offline";
-import type { AiLevel } from "@project-palacio/duel-server/offline";
+import type { ActionResult, AiLevel } from "@project-palacio/duel-server/offline";
 import type { GameClient } from "./GameClient";
 
 // A duel against the computer, entirely on this device: the same DuelRoom
@@ -21,34 +21,60 @@ export interface LocalDuelHandlers {
   onThinking(thinking: boolean): void;
 }
 
+/** Whoever plays the other seat: the AI, or a script (the tutorial). */
+export interface ComputerSeat {
+  isToMove(): boolean;
+  step(): { action: PlayerAction; result: ActionResult } | null;
+}
+
+export interface LocalDuelSetup {
+  edition: Edition;
+  // The AI's level (when no `opponent` is given).
+  level: AiLevel;
+  // Stacked decks, in draw order (default: shuffled default decks).
+  decks?: { duelist1: CardId[]; duelist2: CardId[] };
+  // Your seat (default: a coin flip, i.e. who goes first).
+  humanSeat?: DuelistId;
+  // Count the votes when this turn ends instead of the usual turn.
+  electionTurn?: number;
+  // Who plays the other seat (default: the AI at `level`).
+  opponent?: (room: DuelRoom, seat: DuelistId) => ComputerSeat;
+  // Milliseconds between the computer's moves (default 850).
+  stepMs?: number;
+}
+
 const AI_STEP_MS = 850;
 const AI_PHASE_MS = 320; // a plain "advance phase" doesn't need a long look
 
 export class LocalDuel implements GameClient {
   private room!: DuelRoom;
-  private ai!: AiPlayer;
+  private ai!: ComputerSeat;
   private human: DuelistId = "duelist1";
   private timer: number | null = null;
   private stopped = false;
   readonly edition: Edition;
-  readonly level: AiLevel;
+  private readonly setup: LocalDuelSetup;
   private readonly handlers: LocalDuelHandlers;
   private readonly random: () => number;
+  private readonly stepMs: number;
 
-  constructor(edition: Edition, level: AiLevel, handlers: LocalDuelHandlers, random: () => number = Math.random) {
-    this.edition = edition;
-    this.level = level;
+  constructor(setup: LocalDuelSetup, handlers: LocalDuelHandlers, random: () => number = Math.random) {
+    this.setup = setup;
+    this.edition = setup.edition;
     this.handlers = handlers;
     this.random = random;
+    this.stepMs = setup.stepMs ?? AI_STEP_MS;
   }
 
-  /** Deals a new duel. Who goes first is a coin flip. */
+  /** Deals a new duel. Who goes first is a coin flip (unless the setup says). */
   start(): void {
     this.clearTimer();
-    this.room = new DuelRoom(undefined, undefined, this.random, this.edition);
-    this.human = this.random() < 0.5 ? "duelist1" : "duelist2";
+    const { decks, electionTurn, opponent, level } = this.setup;
+    this.room = new DuelRoom(decks?.duelist1, decks?.duelist2, this.random, this.edition);
+    if (electionTurn !== undefined) this.room.state.election.turn = electionTurn;
+    this.human = this.setup.humanSeat ?? (this.random() < 0.5 ? "duelist1" : "duelist2");
     const aiSeat: DuelistId = this.human === "duelist1" ? "duelist2" : "duelist1";
-    this.ai = new AiPlayer(this.room, aiSeat, this.level, this.random);
+    this.ai = opponent ? opponent(this.room, aiSeat) : new AiPlayer(this.room, aiSeat, level, this.random);
     this.handlers.onSeat(this.human);
     this.push();
     this.scheduleAi();
@@ -99,7 +125,7 @@ export class LocalDuel implements GameClient {
     this.timer = null;
   }
 
-  private scheduleAi(delay = AI_STEP_MS): void {
+  private scheduleAi(delay = this.stepMs): void {
     this.clearTimer();
     const toMove = this.ai.isToMove();
     this.handlers.onThinking(toMove);
@@ -110,7 +136,7 @@ export class LocalDuel implements GameClient {
       const move = this.ai.step();
       // Only successful moves change what the player sees.
       if (move?.result.ok) this.push();
-      const next = this.ai.isToMove() && this.room.state.phase !== "agenda" ? AI_STEP_MS : AI_PHASE_MS;
+      const next = this.ai.isToMove() && this.room.state.phase !== "agenda" ? this.stepMs : AI_PHASE_MS;
       const quick = move && (!move.result.ok || move.action.type === "advance-phase");
       this.scheduleAi(quick ? AI_PHASE_MS : next);
     }, delay);

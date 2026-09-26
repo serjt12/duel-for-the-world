@@ -63,7 +63,14 @@ function statsLine(cardId: CardId, fallback: string | null, stats: CardViewOptio
       className: `card-stats${variant}`,
       title: changed ? `Printed: ATK ${base.atk} / DEF ${base.def}` : "",
     },
-    [`ATK ${stats.atk} / DEF ${stats.def}${!changed ? "" : delta >= 0 ? " ▲" : " ▼"}`],
+    [
+      el("span", { className: "stat-label" }, ["ATK "]),
+      String(stats.atk),
+      " / ",
+      el("span", { className: "stat-label" }, ["DEF "]),
+      String(stats.def),
+      !changed ? "" : delta >= 0 ? " ▲" : " ▼",
+    ],
   );
 }
 

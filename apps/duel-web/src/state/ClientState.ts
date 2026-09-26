@@ -93,6 +93,13 @@ export interface ClientState {
   // A card that retrieves from an Embassy is waiting for the player to
   // pick which card (embassyPicker.ts); `send` sends the play with it.
   embassyPick: { cardId: CardId; choice: EmbassyChoice; send: (embassyPick: number | undefined) => void } | null;
+  // The guided first duel (guide/): which tip is showing, and how many
+  // times a move was blocked on it (each block shakes the tip).
+  guide: { step: number; blocked: number } | null;
+  // The Settings panel (sound, music, vibration) is open.
+  settingsOpen: boolean;
+  // This build has an online server to play on.
+  onlineAvailable: boolean;
 }
 
 export function createInitialState(): ClientState {
@@ -118,5 +125,8 @@ export function createInitialState(): ClientState {
     viewingEmbassy: null,
     finaleDismissed: false,
     embassyPick: null,
+    guide: null,
+    settingsOpen: false,
+    onlineAvailable: true,
   };
 }

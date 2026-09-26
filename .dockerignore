@@ -1,0 +1,10 @@
+node_modules
+**/node_modules
+.git
+apps/duel-web/android
+apps/duel-web/dist
+apps/duel-web/ios
+store
+*.md
+!README.md
+.DS_Store

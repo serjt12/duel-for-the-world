@@ -25,6 +25,7 @@ import { renderDeckPile, renderEmbassyPile } from "./embassy";
 import { effectsOfPlay, retrievalBlock, withEmbassyPick } from "./embassyPicker";
 import { renderHeadlineToast } from "./headlines";
 import { PHASE_LABELS } from "./phaseInfo";
+import { GAME_NAME } from "./brand";
 import { flavor } from "./flavor";
 import { fitStage, isPhoneLayout, STAGE_HEIGHT } from "./stage";
 
@@ -271,6 +272,28 @@ function makeSelectable(target: HTMLElement, onPick: () => void): void {
   });
 }
 
+// What an attack on this Actor would do, shown on each target while you
+// pick one (the same rules BattleSystem applies; a hidden Scandal can
+// still change the story).
+function renderAttackOdds(atk: number, target: PublicFieldActor, runoff: boolean): HTMLElement {
+  const multiplier = runoff ? RUNOFF_DAMAGE_MULTIPLIER : 1;
+  let kind: "win" | "lose" | "even" | "unknown";
+  let text: string;
+  if (target.cardId === null) {
+    kind = "unknown";
+    text = "Face-down: ?";
+  } else if (target.stance === "campaign") {
+    const diff = atk - target.atk;
+    kind = diff > 0 ? "win" : diff < 0 ? "lose" : "even";
+    text = diff > 0 ? `Wins · ${diff * multiplier} damage` : diff < 0 ? "You lose it" : "Both fall";
+  } else {
+    const diff = atk - target.def;
+    kind = diff > 0 ? "win" : diff < 0 ? "lose" : "even";
+    text = diff > 0 ? "Wins · no damage" : diff < 0 ? "You lose it" : "Nothing happens";
+  }
+  return el("div", { className: `attack-odds attack-odds--${kind}` }, [text]);
+}
+
 // --- Menus -----------------------------------------------------------------
 
 function menuButton(
@@ -397,7 +420,7 @@ export function renderBoard(
 ): HTMLElement {
   if (!state.duel) {
     return el("div", {}, [
-      el("h1", {}, ["PALACIO"]),
+      el("h1", { className: "brand-name" }, [GAME_NAME]),
       el("p", { className: "subtitle" }, [flavor().editionName]),
       el("div", { className: "lobby-panel" }, [
         state.roomCode ? el("p", {}, [`Room code: ${state.roomCode}`]) : null,
@@ -632,6 +655,8 @@ export function renderBoard(
             attack(choosingAttack.attackerInstanceId, actor.instanceId);
             idle();
           });
+          const attacker = yourView.field.find((mine) => mine.instanceId === choosingAttack.attackerInstanceId);
+          if (attacker?.cardId) slot.append(renderAttackOdds(attacker.atk, actor, duel.election.runoff));
         }
         if (choosingSide === "opponent-actor") {
           makeSelectable(slot, () => pickPolicyTarget(actor));
@@ -800,6 +825,9 @@ export function renderBoard(
         turn: noteStanceTurn(actor),
         extra: actorMenu,
       });
+      // In Confrontation, the Actors that can still attack stand out.
+      if (attackable && !choosingAttack) slot.classList.add("slot--ready");
+      if (choosingAttack?.attackerInstanceId === actor.instanceId) slot.classList.add("slot--attacking");
 
       if (canAct && inCampaign) {
         // An Establishment Actor dropped onto one of yours tributes it and
@@ -1077,10 +1105,12 @@ export function renderBoard(
         makeDraggable(card, { kind: "hand-card", cardId, handIndex: index });
       }
       const open = menuIndex === index || aimingFromHand === index;
-      return el("div", { className: `hand-slot${open ? " hand-slot--open" : ""}` }, [
+      const slot = el("div", { className: `hand-slot${open ? " hand-slot--open" : ""}` }, [
         card,
         menuIndex === index ? renderHandMenu(cardId, index) : null,
       ]);
+      slot.dataset.cardId = cardId;
+      return slot;
     }),
   );
 
@@ -1113,7 +1143,7 @@ export function renderBoard(
   // screen, so a card can be dragged from the hand to any zone without
   // scrolling.
   const advanceButton = canAct
-    ? el("button", { className: "primary", onclick: () => client.sendAction({ type: "advance-phase" }) }, [
+    ? el("button", { className: "primary advance-button", onclick: () => client.sendAction({ type: "advance-phase" }) }, [
         "Advance Phase",
       ])
     : null;
@@ -1139,7 +1169,20 @@ export function renderBoard(
   const board = el("div", { className: `board${phone ? " board--phone" : ""}` }, [
     el("div", { className: "board-header" }, [
       renderLeaveButton(state, rerender, actions),
-      el("h1", {}, ["PALACIO"]),
+      el(
+        "button",
+        {
+          className: "settings-button",
+          ariaLabel: "Settings",
+          title: "Settings",
+          onclick: () => {
+            state.settingsOpen = true;
+            rerender();
+          },
+        },
+        ["⚙"],
+      ),
+      el("h1", { className: "brand-name" }, [GAME_NAME]),
       el("span", { className: "edition-tag" }, [flavor().editionName]),
       el("span", { className: "status-line" }, [
         state.aiThinking && !gameOver

@@ -33,14 +33,28 @@ export type ClientMessage =
   // `edition`: which set the room plays (default: the World Edition).
   | { type: "create-room"; edition?: Edition }
   | { type: "join-room"; roomCode: string }
+  // Reclaims a slot after a dropped connection (a network blip, the app
+  // backgrounded, a reload). `token` is the reconnectToken this same slot
+  // was given when it first joined -- see room-created/joined-room.
+  | { type: "rejoin"; roomCode: string; token: string }
   | { type: "player-action"; action: PlayerAction };
 
 export type ServerMessage =
   // protocolVersion: see protocol/version.ts -- lets a client detect a
   // server running different (e.g. not-restarted, older) code.
-  | { type: "room-created"; roomCode: string; you: PlayerSlot; protocolVersion: number }
-  | { type: "joined-room"; roomCode: string; you: PlayerSlot; protocolVersion: number }
+  // reconnectToken: hang onto this (e.g. sessionStorage) -- it's what lets
+  // a dropped connection rejoin the same slot instead of losing the seat.
+  | { type: "room-created"; roomCode: string; you: PlayerSlot; protocolVersion: number; reconnectToken: string }
+  | { type: "joined-room"; roomCode: string; you: PlayerSlot; protocolVersion: number; reconnectToken: string }
+  | { type: "rejoined-room"; roomCode: string; you: PlayerSlot; protocolVersion: number }
   | { type: "opponent-joined" }
+  // The opponent's socket dropped, but their reconnect grace period hasn't
+  // expired yet -- they may still come back.
+  | { type: "opponent-disconnected" }
+  | { type: "opponent-reconnected" }
+  // The opponent's grace period ran out without them rejoining: the room
+  // is being torn down.
+  | { type: "opponent-left" }
   | { type: "state"; state: PublicDuelState }
   | { type: "action-rejected"; reason: string }
   | { type: "error"; reason: string };

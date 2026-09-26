@@ -1,4 +1,4 @@
-# Roadmap: PALACIO on Google Play
+# Roadmap: Duel for the World on Google Play
 
 **Goal:** a well-designed, fun game published on Android first (iOS later from
 the same code).
@@ -29,27 +29,38 @@ Owner decisions so far:
 
 ### Phase 2: Fun and feel
 
-- [ ] A guided first duel against an Easy computer.
-- [ ] Sound, music and vibration, with toggles in Settings.
-- [ ] A turn banner, an animation for cards returning from the Embassy, and
-  clearer attack targets.
-- [ ] Bigger key text on the phone layout.
+- [x] A guided first duel (Tutorial), scripted, about 5 minutes.
+- [x] Sound, music and vibration, with toggles in Settings.
+- [x] A turn banner, an animation for cards returning from the Embassy, and
+  attack targets that show what the attack would do.
+- [x] Bigger key text on the phone layout (field cards show name and
+  ATK/DEF big; long-press for the rest).
 - [ ] Playtests on real phones. Tune match length (a quick match with an
   earlier election?).
 - [ ] Re-check Lobbying Deal.
 
 ### Phase 3: Google Play setup (in parallel)
 
-- [ ] Google Play developer account ($25, one-time).
-- [ ] Choose the final app id (permanent once uploaded).
+- [x] Name: **Duel for the World**. App id: `com.jandreus.duelfortheworld`.
+- [x] App icon, launch screen, store icon and feature graphic.
+- [x] Release build setup: signing from `keystore.properties`,
+  `pnpm android:bundle`.
+- [x] Privacy policy page and store listing texts (`store/`).
+- [ ] Google Play developer account ($25, one-time, identity check).
+- [ ] Create the upload key and build the first `.aab`.
+- [ ] Host the privacy policy at a public address.
+- [ ] Phone screenshots for the listing.
 - [ ] A new personal account needs a **closed test with 12 testers for 14
   days** before going public.
-- [ ] A signed release build (AAB).
 
 ### Phase 4: Live online play
 
-- [ ] Host the server on a secure (wss://) address.
-- [ ] Reconnect, a turn timer, room cleanup.
+- [x] Reconnect (a dropped connection can rejoin its seat), a turn timer
+  (an AFK opponent can't stall a match forever), and room cleanup (see
+  [docs/SERVER.md](SERVER.md)).
+- [ ] Host the server on Fly.io at a secure (wss://) address -- deploy
+  files are ready (`Dockerfile`, `fly.toml`); this step is the owner
+  running `fly deploy` from their own account.
 - [ ] Invite a friend by link or room code.
 - [ ] Quick match, with a clearly labelled "play the computer instead" when
   nobody is online.
@@ -69,7 +80,7 @@ Owner decisions so far:
 - [ ] Privacy policy (ads collect device data), the Data safety form, an IARC
   age rating.
 - [ ] Soft launch in a few countries, then worldwide.
-- [ ] Name/trademark check for "PALACIO" and a legal read of the satire.
+- [ ] Trademark check for "Duel for the World" and a legal read of the satire.
 
 ### Later
 

@@ -199,7 +199,41 @@ export function prepareFieldFx(
     }
   }
 
+  // Cards coming back out of an Embassy (Pardons, comebacks, defectors).
+  const returns: Array<{ source: DuelistId; cardId: CardId; find: () => HTMLElement | null; toHand: boolean }> = [];
+  const claimed = new Set<number>();
+  for (const event of fresh) {
+    if (event.kind === "returned-to-hand") {
+      const owner = event.duelistId;
+      const source = event.fromOpponent ? (owner === "duelist1" ? "duelist2" : "duelist1") : owner;
+      const cardId = event.cardId;
+      returns.push({
+        source,
+        cardId,
+        toHand: true,
+        // Your hand shows the card; your opponent's is just a count.
+        find: () => {
+          const inHand = [...document.querySelectorAll<HTMLElement>(`.hand-slot[data-card-id="${cardId}"] > .card`)];
+          return inHand.length > 0 && next.duelists[owner].hand ? inHand[inHand.length - 1] : document.querySelector<HTMLElement>(`.duelist-strip[data-duelist="${owner}"]`);
+        },
+      });
+    } else if (event.kind === "returned-to-field") {
+      const owner = event.duelistId;
+      const cardId = event.cardId;
+      const instance = [...after].find(([id, info]) => !before.has(id) && !claimed.has(id) && info.owner === owner && info.cardId === cardId)?.[0];
+      if (instance === undefined) continue;
+      claimed.add(instance);
+      returns.push({
+        source: owner,
+        cardId,
+        toHand: false,
+        find: () => document.querySelector<HTMLElement>(`[data-instance-id="${instance}"]`),
+      });
+    }
+  }
+
   return () => {
+    returns.forEach((back, index) => playReturn(back.source, back.cardId, back.find, back.toHand, 260 + index * 220));
     // An Actor and the equips that fall with it: the Actor first.
     let equipIndex = 0;
     for (const departure of departures) {
@@ -332,6 +366,54 @@ function playDeparture(departure: Departure, delay: number): void {
       })
       .catch(() => undefined)
       .finally(finish);
+  }, delay);
+}
+
+// A card flying out of an Embassy pile, in an arc, to where it went: a
+// hand card, a field zone, or (your opponent's hand) their name strip.
+function playReturn(source: DuelistId, cardId: CardId, find: () => HTMLElement | null, toHand: boolean, delay: number): void {
+  window.setTimeout(() => {
+    const pile = document.querySelector<HTMLElement>(`.pile--embassy[data-owner="${source}"]`);
+    const target = find();
+    if (!pile || !target) return;
+    const card = renderCardFace(cardId);
+    const holder = el("div", { className: "fx-return" }, [card]);
+    layer().append(holder);
+    const width = card.offsetWidth || 116;
+    const height = card.offsetHeight || 182;
+    Object.assign(holder.style, { width: `${width}px`, height: `${height}px` });
+
+    const pileRect = pile.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    const isCard = target.classList.contains("card");
+    const from = center(pileRect);
+    const to = center(targetRect);
+    const startScale = (pileRect.width * 0.8) / width;
+    // A card's box may be turned sideways (Resistance): its long side is its height.
+    const endScale = isCard ? Math.max(targetRect.width, targetRect.height) / height : startScale * 0.6;
+    const at = (x: number, y: number, scale: number, rotate = 0) =>
+      `translate(${x - width / 2}px, ${y - height / 2}px) scale(${scale}) rotate(${rotate}deg)`;
+
+    if (isCard) target.classList.add("fx-arriving");
+    pile.animate([{ transform: "scale(1)" }, { transform: "scale(1.1)" }, { transform: "scale(1)" }], { duration: 300 });
+    const tilt = to.x >= from.x ? 10 : -10;
+    holder
+      .animate(
+        [
+          { transform: at(from.x, from.y, startScale), opacity: 0.2, filter: "brightness(2)" },
+          { transform: at(from.x, from.y - 30, startScale * 1.15), opacity: 1, filter: "brightness(1.4)", offset: 0.2 },
+          { transform: at((from.x + to.x) / 2, Math.min(from.y, to.y) - 60, (startScale + endScale) / 2 + 0.1, tilt), offset: 0.6 },
+          { transform: at(to.x, to.y, endScale), opacity: isCard ? 1 : 0, filter: "brightness(1)" },
+        ],
+        { duration: 900, easing: "cubic-bezier(0.4, 0, 0.25, 1)", fill: "forwards" },
+      )
+      .finished.catch(() => undefined)
+      .finally(() => {
+        holder.remove();
+        target.classList.remove("fx-arriving");
+        if (isCard) jolt(target);
+        else if (toHand) target.animate([{ filter: "brightness(1.5)" }, { filter: "brightness(1)" }], { duration: 400 });
+      });
   }, delay);
 }
 

@@ -8,7 +8,10 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
     "android:add": "vite build && cap add android && node scripts/android-setup.mjs",
+    "android:setup": "node scripts/android-setup.mjs",
+    "android:bundle": "vite build && cap sync android && node scripts/android-bundle.mjs",
     "android:sync": "vite build && cap sync android",
     "android:open": "cap open android",
     "android:run": "vite build && cap sync android && cap run android"
@@ -16,6 +19,7 @@
   "devDependencies": {
     "typescript": "~6.0.2",
     "vite": "^8.2.2",
+    "vitest": "^4.1.11",
     "@capacitor/cli": "^8.0.0",
     "@capacitor/android": "^8.0.0"
   },

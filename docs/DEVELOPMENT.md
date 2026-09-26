@@ -20,6 +20,9 @@ or add `?layout=phone` to the address.
 - `packages/duel-server` tests rooms, redaction (nothing hidden may leak) and
   the AI (whole games finish, and the AI decides the same way whatever the
   hidden cards are).
+- `apps/duel-web` tests the tutorial: it plays every step against the real
+  rules and checks you win the election 25 to 18. If you change a card used
+  in the tutorial (see `guide/script.ts`), run it.
 - The server smoke test runs against a live server:
   `pnpm --filter @project-palacio/duel-server smoke-test` (start the server
   first).
@@ -73,5 +76,8 @@ outliers, then confirm with real playtests.
 - **TypeScript that runs as-is.** No `enum`s and no constructor parameter
   properties (the web app uses `erasableSyntaxOnly`, and scripts run with
   Node's type stripping).
+- **Sounds** are code, not files: add a recipe to `audio/synth.ts` and hook it
+  to a duel event in `audio/sound.ts`. Keep them short and quiet; music
+  stays under the effects.
 - **Edition text** goes through `ui/flavor.ts` (UI) or `EMBASSY_TEXT`
   (card text). Don't hard-code "Embassy" or "La Embajada".

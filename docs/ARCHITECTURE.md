@@ -1,6 +1,6 @@
 # Architecture
 
-PALACIO is a pnpm monorepo in TypeScript with three packages and one app.
+Duel for the World (codename PALACIO) is a pnpm monorepo in TypeScript with three packages and one app.
 Dependencies only point downwards:
 
 ```
@@ -87,12 +87,26 @@ DOM from `ClientState` (`ui/dom.ts` has a tiny `el()` helper).
 
 - `app.ts`: `startApp()` wires the state, rendering and the active
   "other side". `main.ts` only adds the stylesheet.
+- `guide/`: the tutorial, a scripted first duel.
+  - `script.ts`: stacked decks, the computer's moves by turn and phase, and
+    the steps. Each step waits for "Next", for one specific move (anything
+    else is blocked with a nudge), or for the computer. Steps only read the
+    public state, so `__tests__/guide.test.ts` plays the whole tutorial
+    headlessly.
+  - `ScriptedSeat.ts`: a computer seat that follows the script (same
+    interface as `AiPlayer`).
+  - `coach.ts`: the tip box, the glow on what a tip is about, and the gate.
+- `audio/`: `synth.ts` builds every sound effect and the music loop with the
+  Web Audio API (no audio files). `sound.ts` starts audio on the first tap,
+  maps duel log events to sounds and vibration, and pauses in the
+  background. `settings.ts` holds the Sound / Music / Vibration switches.
 - `net/GameClient.ts` is the interface the UI talks to, with two
   implementations:
   - `DuelClient`: the online server over WebSocket (checks the protocol
     version).
-  - `LocalDuel`: a `DuelRoom` and `AiPlayer` on the device. The AI moves one
-    step at a time with short pauses.
+  - `LocalDuel`: a `DuelRoom` and a computer seat on the device (the AI, or
+    the tutorial's script), moving one step at a time with short pauses. Its
+    setup can stack the decks, fix your seat and bring the election forward.
 - `state/ClientState.ts`: screen, mode, interaction state (menus, targeting),
   the Embassy picker, preferences.
 - `ui/`:
@@ -101,8 +115,11 @@ DOM from `ClientState` (`ui/dom.ts` has a tiny `el()` helper).
   - Cards: `cardView`, `cardArt`, `cardInfo`, `inspect` (long-press zoom).
   - Interaction: `dragDrop`, `embassyPicker`, `keyboard`.
   - The log: `eventText` and `headlines` (the battle report).
-  - Effects: `fieldFx` (hit, fly-to-Embassy), `finale` (the Election Night
-    newspaper).
+  - Effects: `fieldFx` (hit, fly-to-Embassy, cards flying back out of an
+    Embassy), `turnBanner` ("Your turn"), `finale` (the Election Night
+    newspaper). While you pick an attack target, each target shows what the
+    attack would do.
+  - `settingsPanel`: Settings (sound, music, vibration).
   - `flavor.ts`: every edition-dependent string (Embassy/La Embajada,
     Headlines/Titulares, Rematch!/¡Revancha!…).
   - `phaseInfo` and `renderTutorial`: How to Play.

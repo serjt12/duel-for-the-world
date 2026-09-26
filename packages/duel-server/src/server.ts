@@ -11,6 +11,28 @@ import { PROTOCOL_VERSION } from "./protocol/version";
 
 const PORT = Number(process.env.PORT ?? 8080);
 
+// How long a dropped connection's slot stays reserved before the room
+// gives up on it and, if the other player is still around, hands them the
+// win by forfeit. Long enough to survive a phone locking or a subway
+// tunnel; short enough that nobody waits around all night for a rival who
+// isn't coming back.
+const RECONNECT_GRACE_MS = Number(process.env.RECONNECT_GRACE_MS ?? 90_000);
+// If the active player hasn't acted by this long, the server advances the
+// phase on their behalf -- so an AFK or unusually slow opponent can't
+// stall the match forever for the player who's actually still there.
+const TURN_TIMEOUT_MS = Number(process.env.TURN_TIMEOUT_MS ?? 90_000);
+// A safety net, not the normal cleanup path (that's the reconnect-grace
+// timer above): catches a room nobody ever fully connected to -- e.g. one
+// player created it and never came back -- so it doesn't sit in memory
+// forever.
+const IDLE_SWEEP_INTERVAL_MS = 5 * 60_000;
+const ROOM_MAX_IDLE_MS = 30 * 60_000;
+// A ws-level ping every this often. A half-open connection (the OS never
+// told us the socket died -- flaky mobile networks do this constantly)
+// won't answer a ping, so it gets terminated and treated like any other
+// disconnect instead of silently occupying a slot forever.
+const HEARTBEAT_INTERVAL_MS = 30_000;
+
 const roomManager = new RoomManager();
 
 interface ConnectionInfo {
@@ -23,8 +45,55 @@ interface ConnectionInfo {
 const connections = new Map<WebSocket, ConnectionInfo>();
 const roomSockets = new Map<string, Set<WebSocket>>();
 
+// Per-room live timers, and the last time anything happened in a room
+// (join, rejoin, or a player action) -- what the idle sweep checks.
+interface RoomTimers {
+  turnTimer: ReturnType<typeof setTimeout> | null;
+  disconnectTimers: Partial<Record<PlayerSlot, ReturnType<typeof setTimeout>>>;
+}
+const roomTimers = new Map<string, RoomTimers>();
+const roomActivity = new Map<string, number>();
+
+function timersFor(roomCode: string): RoomTimers {
+  let timers = roomTimers.get(roomCode);
+  if (!timers) {
+    timers = { turnTimer: null, disconnectTimers: {} };
+    roomTimers.set(roomCode, timers);
+  }
+  return timers;
+}
+
+function touch(roomCode: string): void {
+  roomActivity.set(roomCode, Date.now());
+}
+
+function clearRoomTimers(roomCode: string): void {
+  const timers = roomTimers.get(roomCode);
+  if (!timers) return;
+  if (timers.turnTimer) clearTimeout(timers.turnTimer);
+  for (const timer of Object.values(timers.disconnectTimers)) {
+    if (timer) clearTimeout(timer);
+  }
+  roomTimers.delete(roomCode);
+}
+
+function destroyRoom(roomCode: string): void {
+  clearRoomTimers(roomCode);
+  roomManager.removeRoom(roomCode);
+  roomSockets.delete(roomCode);
+  roomActivity.delete(roomCode);
+}
+
 function send(socket: WebSocket, message: ServerMessage): void {
   socket.send(JSON.stringify(message));
+}
+
+function broadcast(roomCode: string, message: ServerMessage, exclude?: WebSocket): void {
+  const sockets = roomSockets.get(roomCode);
+  if (!sockets) return;
+  for (const socket of sockets) {
+    if (socket !== exclude) send(socket, message);
+  }
 }
 
 // Sends each connected socket its OWN view of the state -- never the raw
@@ -53,6 +122,34 @@ function broadcastState(roomCode: string): void {
       state: redactStateFor(room.state, info.slot, { rematchVotes: room.rematchVotes(), edition: room.edition }),
     };
     send(socket, message);
+  }
+}
+
+// Re-arms the per-room turn clock. Called after anything that could start
+// or move a turn along (a player's own action, the room filling up,
+// rejoin). A duel that's already over needs no clock.
+function scheduleTurnTimer(roomCode: string): void {
+  const timers = timersFor(roomCode);
+  if (timers.turnTimer) clearTimeout(timers.turnTimer);
+
+  const room = roomManager.getRoom(roomCode);
+  if (!room || room.state.winnerId) return;
+
+  timers.turnTimer = setTimeout(() => {
+    const current = roomManager.getRoom(roomCode);
+    if (!current || current.state.winnerId) return;
+    current.applyAction(current.state.activeDuelistId, { type: "advance-phase" });
+    broadcastState(roomCode);
+    scheduleTurnTimer(roomCode);
+  }, TURN_TIMEOUT_MS);
+}
+
+function clearDisconnectTimer(roomCode: string, slot: PlayerSlot): void {
+  const timers = roomTimers.get(roomCode);
+  const pending = timers?.disconnectTimers[slot];
+  if (pending) {
+    clearTimeout(pending);
+    delete timers!.disconnectTimers[slot];
   }
 }
 
@@ -87,7 +184,14 @@ function handleMessage(socket: WebSocket, raw: { toString(): string }): void {
 
     connections.set(socket, { roomCode, slot });
     roomSockets.set(roomCode, new Set([socket]));
-    send(socket, { type: "room-created", roomCode, you: slot, protocolVersion: PROTOCOL_VERSION });
+    touch(roomCode);
+    send(socket, {
+      type: "room-created",
+      roomCode,
+      you: slot,
+      protocolVersion: PROTOCOL_VERSION,
+      reconnectToken: room.tokenFor(slot)!,
+    });
     return;
   }
 
@@ -110,21 +214,54 @@ function handleMessage(socket: WebSocket, raw: { toString(): string }): void {
     const sockets = roomSockets.get(message.roomCode) ?? new Set<WebSocket>();
     sockets.add(socket);
     roomSockets.set(message.roomCode, sockets);
+    touch(message.roomCode);
     send(socket, {
       type: "joined-room",
       roomCode: message.roomCode,
       you: slot,
       protocolVersion: PROTOCOL_VERSION,
+      reconnectToken: room.tokenFor(slot)!,
     });
 
     if (room.isFull()) {
-      for (const other of sockets) {
-        if (other !== socket) {
-          send(other, { type: "opponent-joined" });
-        }
-      }
+      broadcast(message.roomCode, { type: "opponent-joined" }, socket);
       broadcastState(message.roomCode);
+      scheduleTurnTimer(message.roomCode);
     }
+    return;
+  }
+
+  if (message.type === "rejoin") {
+    const room = roomManager.getRoom(message.roomCode);
+
+    if (!room) {
+      send(socket, { type: "error", reason: "room-not-found" });
+      return;
+    }
+
+    const slot = room.reconnect(message.token);
+
+    if (!slot) {
+      send(socket, { type: "error", reason: "invalid-token" });
+      return;
+    }
+
+    clearDisconnectTimer(message.roomCode, slot);
+    connections.set(socket, { roomCode: message.roomCode, slot });
+    const sockets = roomSockets.get(message.roomCode) ?? new Set<WebSocket>();
+    sockets.add(socket);
+    roomSockets.set(message.roomCode, sockets);
+    touch(message.roomCode);
+
+    send(socket, {
+      type: "rejoined-room",
+      roomCode: message.roomCode,
+      you: slot,
+      protocolVersion: PROTOCOL_VERSION,
+    });
+    broadcast(message.roomCode, { type: "opponent-reconnected" }, socket);
+    broadcastState(message.roomCode);
+    scheduleTurnTimer(message.roomCode);
     return;
   }
 
@@ -150,17 +287,58 @@ function handleMessage(socket: WebSocket, raw: { toString(): string }): void {
       return;
     }
 
+    touch(info.roomCode);
     broadcastState(info.roomCode);
+    scheduleTurnTimer(info.roomCode);
     return;
   }
 
   send(socket, { type: "error", reason: "unknown-message" });
 }
 
+// A socket going away: the room isn't torn down immediately (a network
+// blip, the app backgrounding, or a phone locking all look identical to
+// this) -- the slot just stops being "connected," the other player (if
+// any) is told, and a grace-period timer starts. If nobody reclaims the
+// slot with the right token before it fires, whoever's left is told the
+// room is done and it's destroyed; if nobody's left either, it's simply
+// destroyed.
+function handleClose(socket: WebSocket): void {
+  const info = connections.get(socket);
+  connections.delete(socket);
+
+  if (!info) return;
+
+  roomSockets.get(info.roomCode)?.delete(socket);
+  const room = roomManager.getRoom(info.roomCode);
+  if (!room) return;
+
+  room.disconnectSlot(info.slot);
+  broadcast(info.roomCode, { type: "opponent-disconnected" });
+
+  const timers = timersFor(info.roomCode);
+  timers.disconnectTimers[info.slot] = setTimeout(() => {
+    delete timers.disconnectTimers[info.slot];
+    const current = roomManager.getRoom(info.roomCode);
+    if (!current || current.isSlotConnected(info.slot)) return; // reclaimed meanwhile
+
+    const remaining = roomSockets.get(info.roomCode);
+    if (remaining && remaining.size > 0) {
+      broadcast(info.roomCode, { type: "opponent-left" });
+    }
+    destroyRoom(info.roomCode);
+  }, RECONNECT_GRACE_MS);
+}
+
 export function startServer(port: number = PORT): WebSocketServer {
   const wss = new WebSocketServer({ port });
 
-  wss.on("connection", (socket: WebSocket) => {
+  wss.on("connection", (socket: WebSocket & { isAlive?: boolean }) => {
+    socket.isAlive = true;
+    socket.on("pong", () => {
+      socket.isAlive = true;
+    });
+
     socket.on("message", (raw) => {
       // Last line of defense: an exception escaping a ws event handler
       // would crash the whole Node process -- every room, every player --
@@ -175,18 +353,32 @@ export function startServer(port: number = PORT): WebSocketServer {
       }
     });
 
-    socket.on("close", () => {
-      const info = connections.get(socket);
-      connections.delete(socket);
+    socket.on("close", () => handleClose(socket));
+  });
 
-      if (info) {
-        // Deliberately not tearing the room down on disconnect for v1 -- a
-        // dropped player just leaves the room waiting. Cleaning up
-        // long-abandoned rooms (a TTL, most likely) is a later concern,
-        // not a blocker for a first playable multiplayer version.
-        roomSockets.get(info.roomCode)?.delete(socket);
+  const heartbeat = setInterval(() => {
+    for (const socket of wss.clients as Set<WebSocket & { isAlive?: boolean }>) {
+      if (socket.isAlive === false) {
+        socket.terminate(); // fires "close" above, same path as a normal disconnect
+        continue;
       }
-    });
+      socket.isAlive = false;
+      socket.ping();
+    }
+  }, HEARTBEAT_INTERVAL_MS);
+
+  const idleSweep = setInterval(() => {
+    const now = Date.now();
+    for (const [roomCode, lastActive] of roomActivity) {
+      if (now - lastActive > ROOM_MAX_IDLE_MS) {
+        destroyRoom(roomCode);
+      }
+    }
+  }, IDLE_SWEEP_INTERVAL_MS);
+
+  wss.on("close", () => {
+    clearInterval(heartbeat);
+    clearInterval(idleSweep);
   });
 
   return wss;

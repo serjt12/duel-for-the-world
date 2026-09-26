@@ -2,6 +2,7 @@ import type { ClientState } from "../state/ClientState";
 import type { GameClient } from "../net/GameClient";
 import { el } from "./dom";
 import { flavorOf, setEdition } from "./flavor";
+import { GAME_NAME, GAME_TAGLINE } from "./brand";
 
 export function renderLobby(state: ClientState, client: GameClient, actions: { backToMenu(): void }): HTMLElement {
   const roomInput = el("input", {
@@ -20,8 +21,8 @@ export function renderLobby(state: ClientState, client: GameClient, actions: { b
   });
 
   return el("div", {}, [
-    el("h1", {}, ["PALACIO"]),
-    el("p", { className: "subtitle" }, ["The Political Card Duel"]),
+    el("h1", { className: "brand-name" }, [GAME_NAME]),
+    el("p", { className: "subtitle" }, [GAME_TAGLINE]),
     el("div", { className: "lobby-panel" }, [
       state.statusLine ? el("p", { className: "status-line" }, [state.statusLine]) : null,
       el("div", { className: "edition-row" }, [

@@ -33,6 +33,41 @@ describe("DuelRoom", () => {
     expect(room.join()).toBeNull();
   });
 
+  it("mints a reconnect token per slot on join, and reconnect() reclaims the right slot", () => {
+    const room = new DuelRoom();
+
+    room.join(); // duelist1
+    room.join(); // duelist2
+    const token1 = room.tokenFor("duelist1");
+    const token2 = room.tokenFor("duelist2");
+
+    expect(token1).toBeTruthy();
+    expect(token2).toBeTruthy();
+    expect(token1).not.toBe(token2);
+    expect(room.reconnect(token1!)).toBe("duelist1");
+    expect(room.reconnect(token2!)).toBe("duelist2");
+    expect(room.reconnect("not-a-real-token")).toBeNull();
+  });
+
+  it("tracks per-slot connection state and reports when every filled slot has gone quiet", () => {
+    const room = new DuelRoom();
+    room.join();
+    room.join();
+
+    expect(room.isSlotConnected("duelist1")).toBe(true);
+    expect(room.allFilledSlotsDisconnected()).toBe(false);
+
+    room.disconnectSlot("duelist1");
+    expect(room.isSlotConnected("duelist1")).toBe(false);
+    expect(room.allFilledSlotsDisconnected()).toBe(false); // duelist2 still connected
+
+    room.disconnectSlot("duelist2");
+    expect(room.allFilledSlotsDisconnected()).toBe(true);
+
+    room.reconnect(room.tokenFor("duelist1")!);
+    expect(room.allFilledSlotsDisconnected()).toBe(false);
+  });
+
   it("starts with a duel already set up via the engine's own defaults", () => {
     const room = new DuelRoom();
 
