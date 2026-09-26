@@ -1,33 +1,25 @@
-# Fly.io deployment for the online-play game server (packages/duel-server).
-# See docs/SERVER.md for the full deploy walkthrough.
+# fly.toml app configuration file generated for project-palacio on 2026-09-26T03:54:13Z
 #
-# `app` must be globally unique across every Fly account, not just yours --
-# `duel-for-the-world` is very likely already taken. Change it before your
-# first deploy (or let `fly launch` pick one interactively); everything
-# else here can stay as is.
-app = "duel-for-the-world"
-primary_region = "iad" # Virginia -- closest Fly region to Colombia with no latency surprises for a turn-based game
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'project-palacio'
+primary_region = 'ams'
 
 [build]
-  dockerfile = "Dockerfile"
+  dockerfile = 'Dockerfile'
 
 [env]
-  PORT = "8080"
+  PORT = '8080'
 
-# A duel room lives only in this process's memory (see RoomManager) --
-# there's nothing to hand off between machines, so this stays as exactly
-# one always-on machine rather than Fly's usual scale-to-zero behavior.
-# auto_stop_machines = false + min_machines_running = 1 is what makes it
-# always-on; auto_start_machines just means it comes back on its own if it
-# ever does stop (a deploy, a restart).
 [http_service]
   internal_port = 8080
   force_https = true
-  auto_stop_machines = false
+  auto_stop_machines = 'off'
   auto_start_machines = true
   min_machines_running = 1
-  processes = ["app"]
+  processes = ['app']
 
 [[vm]]
-  size = "shared-cpu-1x"
-  memory = "256mb"
+  size = 'shared-cpu-1x'
+  memory = '256mb'
