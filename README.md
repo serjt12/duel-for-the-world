@@ -1,6 +1,5 @@
 # Duel for the World — The Political Card Game
 
-_(Codename PALACIO: the repository and package names keep it.)_
 
 A satirical, turn-based card duel about power, elections and scandals, in the
 spirit of Yu-Gi-Oh. Deploy politicians, play Policies, set Scandals, send your

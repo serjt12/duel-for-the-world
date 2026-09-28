@@ -1,4 +1,4 @@
-import type { ScandalCardId } from "@project-palacio/duel-content";
+import type { ScandalCardId } from "@duel-for-the-world/duel-content";
 import type { DuelistId } from "../duelists/DuelistId";
 
 // A Scandal card Set face-down on its controller's field, waiting on its

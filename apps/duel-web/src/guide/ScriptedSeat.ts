@@ -1,6 +1,6 @@
-import type { DuelistId } from "@project-palacio/duel-engine";
-import type { PlayerAction } from "@project-palacio/duel-server";
-import type { ActionResult, DuelRoom } from "@project-palacio/duel-server/offline";
+import type { DuelistId } from "@duel-for-the-world/duel-engine";
+import type { PlayerAction } from "@duel-for-the-world/duel-server";
+import type { ActionResult, DuelRoom } from "@duel-for-the-world/duel-server/offline";
 
 /**
  * A computer seat that follows a fixed script instead of thinking: the

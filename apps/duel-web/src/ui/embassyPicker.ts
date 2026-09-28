@@ -1,7 +1,7 @@
-import { ACTOR_CARDS, CARDS, POLICY_CARDS, embassyChoiceIn } from "@project-palacio/duel-content";
-import type { CardId, InstantEffect } from "@project-palacio/duel-content";
-import { ACTOR_ZONE_COUNT, eligibleEmbassyIndices } from "@project-palacio/duel-engine";
-import type { PlayerSlot, PublicDuelState } from "@project-palacio/duel-server";
+import { ACTOR_CARDS, CARDS, POLICY_CARDS, embassyChoiceIn } from "@duel-for-the-world/duel-content";
+import type { CardId, InstantEffect } from "@duel-for-the-world/duel-content";
+import { ACTOR_ZONE_COUNT, eligibleEmbassyIndices } from "@duel-for-the-world/duel-engine";
+import type { PlayerSlot, PublicDuelState } from "@duel-for-the-world/duel-server";
 import type { ClientState } from "../state/ClientState";
 import { renderCardFace } from "./cardView";
 import { el } from "./dom";

@@ -3,11 +3,11 @@ import type {
   Edition,
   PolicyCardId,
   ScandalCardId,
-} from "@project-palacio/duel-content";
+} from "@duel-for-the-world/duel-content";
 import type {
   DeployOptions,
   PolicyActivationOptions,
-} from "@project-palacio/duel-engine";
+} from "@duel-for-the-world/duel-engine";
 import type { PlayerSlot } from "../rooms/DuelRoom";
 import type { PublicDuelState } from "./PublicDuelState";
 
@@ -37,6 +37,14 @@ export type ClientMessage =
   // backgrounded, a reload). `token` is the reconnectToken this same slot
   // was given when it first joined -- see room-created/joined-room.
   | { type: "rejoin"; roomCode: string; token: string }
+  // No room code needed: wait to be paired with the next other player who
+  // also asks for this edition. See match-found below, and
+  // rooms/MatchmakingQueue.ts.
+  | { type: "quick-match"; edition?: Edition }
+  // Stop waiting (the player backed out, or picked something else) before
+  // a match was found. A no-op if a match was already found or this
+  // socket was never waiting.
+  | { type: "cancel-quick-match" }
   | { type: "player-action"; action: PlayerAction };
 
 export type ServerMessage =
@@ -55,6 +63,14 @@ export type ServerMessage =
   // The opponent's grace period ran out without them rejoining: the room
   // is being torn down.
   | { type: "opponent-left" }
+  // Acknowledges a quick-match request: nobody else was waiting for this
+  // edition yet, so this socket is now the one other players get paired
+  // with.
+  | { type: "quick-match-waiting" }
+  // Paired with another quick-match request into a brand-new room. Same
+  // fields as room-created/joined-room (and the same meaning), just sent
+  // to both sides at once instead of one creating and one joining by code.
+  | { type: "match-found"; roomCode: string; you: PlayerSlot; protocolVersion: number; reconnectToken: string }
   | { type: "state"; state: PublicDuelState }
   | { type: "action-rejected"; reason: string }
   | { type: "error"; reason: string };

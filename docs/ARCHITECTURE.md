@@ -1,6 +1,6 @@
 # Architecture
 
-Duel for the World (codename PALACIO) is a pnpm monorepo in TypeScript with three packages and one app.
+Duel for the World is a pnpm monorepo in TypeScript with three packages and one app.
 Dependencies only point downwards:
 
 ```
@@ -77,7 +77,7 @@ from an untrusted client.
   - Levels: Easy (sloppy heuristics), Normal (heuristics), Hard (`search.ts`:
     it samples plausible hidden cards, plays each candidate move forward
     through its turn and the opponent's reply, and picks the best average).
-- `offline.ts` is a browser-safe entry point (`@project-palacio/duel-server/offline`)
+- `offline.ts` is a browser-safe entry point (`@duel-for-the-world/duel-server/offline`)
   so the app can run a room and the AI on the device, with no network.
 
 ## apps/duel-web: the game client

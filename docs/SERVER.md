@@ -8,6 +8,28 @@ Offline play (vs. the computer, and the guided tutorial) never touches
 this -- it's all local to the phone. Skip this whole page until online
 play is what you're working on.
 
+## Current status
+
+The server is live, on Fly.io's `duel-for-the-world` app, one machine in
+`iad` (Virginia). The app talks to it at `wss://duel-for-the-world.fly.dev`
+(`apps/duel-web/.env.production.local`).
+
+It wasn't always called that. The very first deploy, done through the
+Fly.io dashboard's "Launch" flow rather than the CLI walkthrough below,
+auto-created an app named `project-palacio` -- and, without anyone asking
+for it, in the Amsterdam (`ams`) region with *two* machines instead of one.
+Since a duel room lives only in one process's memory (see "Every deploy
+after that" below, and `RoomManager`), two machines meant two independent,
+unsynced copies of "which rooms exist": whichever player's connection
+landed on the other machine got an instant "room not found," which looked
+like getting kicked before the match even started. Meanwhile a much older,
+already-single-machine app called `duel-for-the-world` (in `iad`, matching
+the game's actual name) had been sitting unused from an earlier attempt.
+Rather than fight the accidental `ams` deploy, the fix was to deploy onto
+that pre-existing `duel-for-the-world` app instead and delete
+`project-palacio` outright. If you ever see `project-palacio` mentioned in
+an old screenshot or chat log, that's why -- it no longer exists.
+
 ## Why Fly.io
 
 Compared against Railway and Render: Render's free tier sleeps after 15
@@ -23,6 +45,11 @@ machine, but check the current price for that size on Fly's own pricing
 page before relying on a number here, since it does change.
 
 ## One-time setup
+
+**Already done for this project** -- the app exists (`duel-for-the-world`,
+see "Current status" above). This walkthrough is kept for reference, and
+for if this ever needs to be set up again from scratch somewhere else;
+skip to "Every deploy after that" below for normal day-to-day use.
 
 All of this runs in a terminal (PowerShell or a Linux/WSL shell) at the
 repo root, on your own machine -- not somewhere Claude can do it for you,
@@ -96,3 +123,47 @@ a room down the instant a socket drops:
 - A background sweep also clears out any room that's sat completely idle
   for 30 minutes (e.g. one player created it and nobody ever joined), as a
   safety net independent of the above.
+
+## Troubleshooting
+
+- **Every `wss://` connection resets immediately (close code 1006), even
+  though `fly logs` shows the server running and listening.** Check the
+  app's Overview page on fly.io's dashboard, under Networking / IP
+  addresses. If it says "This app has no IP addresses," that's the whole
+  problem -- there's nothing for Fly's edge to route to, so every
+  connection gets reset before it completes, no matter how healthy the
+  app itself is. `fly launch` normally assigns one automatically the first
+  time you deploy, but an app that's sat around unused from an earlier
+  attempt (as `duel-for-the-world` did before it became the real one) may
+  not have one yet. Fix: on that page, click "Assign Shared IPv4" and
+  "Assign Dedicated IPv6" (both free -- skip "Assign Dedicated IPv4,"
+  which costs money and isn't needed here). Takes effect immediately, no
+  redeploy needed.
+- **A room gets created fine, but the other player's "join" always comes
+  back "room not found," even though both are clearly using the same
+  code.** Check `fly machine list -a duel-for-the-world` (or the
+  dashboard's Machines tab). There should be exactly **one** machine. A
+  duel room lives only in that one process's memory, so if there are two
+  (Fly's dashboard "Launch" flow defaults to two for redundancy, even
+  though `fly.toml` only sets a *floor* of one, not a cap), players get
+  round-robined between them and can each end up talking to a machine
+  that's never heard of the other's room. Fix: remove the extra machine
+  from the dashboard (or `fly scale count 1`) so only one remains.
+- **`flyctl` fails with `dial tcp: lookup api.machines.dev: no such host`**
+  (or the same for `api.fly.io`), even though a browser reaches fly.io
+  just fine and other CLI tools (npm, git, keytool...) have no trouble.
+  This is `flyctl`'s own Go DNS resolver misbehaving on some Windows
+  setups, not a real network or account problem. Try, in order: retry the
+  same command (it can be intermittent); `$env:GODEBUG="netdns=go"` (or
+  `"netdns=cgo"` in a fresh terminal if that doesn't help) before the `fly`
+  command; or skip the CLI for that step entirely and use the fly.io
+  website instead, which can do everything `flyctl` can (checking status,
+  logs, machine count, and triggering a deploy if the app is connected to
+  a GitHub repo) without needing the CLI to work at all.
+- **`fly status` / `fly deploy` / `fly apps list` say "app not found," but
+  the app is clearly live.** These commands read the app name from
+  `fly.toml` in your current directory. If you deployed once through the
+  fly.io website and the app ended up with a different name than what's
+  in `fly.toml` (the website defaults to the GitHub repo's name), either
+  edit `app = "..."` in `fly.toml` to match the real name (shown on the
+  app's dashboard page), or pass it explicitly: `fly status -a <real-name>`.

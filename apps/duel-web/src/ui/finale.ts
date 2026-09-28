@@ -1,7 +1,11 @@
-import type { DuelEvent, DuelistId, VoteCount } from "@project-palacio/duel-engine";
+import { CARDS, nextUnlock } from "@duel-for-the-world/duel-content";
+import type { CardId } from "@duel-for-the-world/duel-content";
+import type { DuelEvent, DuelistId, VoteCount } from "@duel-for-the-world/duel-engine";
 import { playCrowdReaction } from "../audio/sound";
 import type { GameClient } from "../net/GameClient";
 import type { ClientState } from "../state/ClientState";
+import { progress, recordOfflineWin } from "../state/progress";
+import { renderCardFace } from "./cardView";
 import { el } from "./dom";
 import { flavor } from "./flavor";
 
@@ -64,7 +68,7 @@ function voteRow(label: string, votes: VoteCount, mine: boolean): { row: HTMLEle
   };
 }
 
-function build(state: ClientState, client: GameClient, rerender: () => void): HTMLElement {
+function build(state: ClientState, client: GameClient, rerender: () => void, unlockedCardId: CardId | null): HTMLElement {
   const duel = state.duel!;
   const you = state.you as DuelistId;
   const opponent: DuelistId = you === "duelist1" ? "duelist2" : "duelist1";
@@ -124,6 +128,30 @@ function build(state: ClientState, client: GameClient, rerender: () => void): HT
     ]);
     children.push(mandate);
     timers.push(window.setTimeout(() => playCrowdReaction(won ? "cheer" : "groan"), 900));
+  }
+
+  if (won && unlockedCardId) {
+    const cardId = unlockedCardId;
+    children.push(
+      el("div", { className: "unlock-reveal" }, [
+        el("div", { className: "unlock-reveal-label" }, ["\u{1F389} New Politician Identified!"]),
+        el("div", { className: "unlock-reveal-card" }, [renderCardFace(cardId, {})]),
+        el("div", { className: "unlock-reveal-name" }, [CARDS[cardId].name]),
+        el(
+          "button",
+          {
+            className: "primary",
+            onclick: () => {
+              state.shopSelected = cardId;
+              state.shopOpen = true;
+              state.finaleDismissed = true;
+              rerender();
+            },
+          },
+          ["See in the Field Guide"],
+        ),
+      ]),
+    );
   }
 
   // Rematch: both players must ask.
@@ -194,11 +222,26 @@ export function syncFinale(state: ClientState, client: GameClient, rerender: () 
   const key = `${wonEvent?.seq ?? 0}|${duel.winnerId}|${(duel.rematchVotes ?? []).join(",")}`;
   if (key === shownKey) return;
 
+  // A genuinely new result, shown for the first time: if it's an offline
+  // win (not the tutorial, which is scripted to always go your way),
+  // count it towards the Field Guide's unlocks -- and remember which card
+  // it just revealed, if any, so the win screen can show it off. Checked
+  // against the win count *before* recording this one: unlock steps are
+  // 2 wins apart and this only ever advances by 1, so at most one step
+  // is crossed per win.
+  let unlockedCardId: CardId | null = null;
+  if (duel.winnerId === state.you && state.mode === "offline" && !state.guide) {
+    const winsBefore = progress().offlineWins;
+    const upcoming = nextUnlock(state.aiEdition, winsBefore);
+    recordOfflineWin();
+    if (upcoming && upcoming.winsRequired === winsBefore + 1) unlockedCardId = upcoming.id;
+  }
+
   // Only the rematch votes changed: swap the page but skip the replay.
   const sameResult = shownKey !== null && shownKey.split("|").slice(0, 2).join("|") === key.split("|").slice(0, 2).join("|");
   const previousCount = sameResult ? root?.querySelector(".paper-count")?.cloneNode(true) : null;
   clear();
-  root = build(state, client, rerender);
+  root = build(state, client, rerender, unlockedCardId);
   if (previousCount) {
     // Keep the finished count instead of replaying it.
     timers.splice(0).forEach((id) => window.clearTimeout(id));

@@ -1,4 +1,4 @@
-import type { ActorCardId, CardId, PolicyCardId, ScandalCardId } from "@project-palacio/duel-content";
+import type { ActorCardId, CardId, PolicyCardId, ScandalCardId } from "@duel-for-the-world/duel-content";
 import type { DuelistId } from "../duelists/DuelistId";
 import type { ActorStance } from "../field/FieldActor";
 import type { VoteCount } from "../systems/ElectionSystem";

@@ -1,5 +1,5 @@
 {
-  "name": "@project-palacio/duel-engine",
+  "name": "@duel-for-the-world/duel-engine",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -14,6 +14,6 @@
     "vitest": "^4.1.11"
   },
   "dependencies": {
-    "@project-palacio/duel-content": "workspace:*"
+    "@duel-for-the-world/duel-content": "workspace:*"
   }
 }

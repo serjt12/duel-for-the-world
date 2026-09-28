@@ -17,13 +17,13 @@ importers:
       '@capacitor/core':
         specifier: ^8.0.0
         version: 8.5.2
-      '@project-palacio/duel-content':
+      '@duel-for-the-world/duel-content':
         specifier: workspace:*
         version: link:../../packages/duel-content
-      '@project-palacio/duel-engine':
+      '@duel-for-the-world/duel-engine':
         specifier: workspace:*
         version: link:../../packages/duel-engine
-      '@project-palacio/duel-server':
+      '@duel-for-the-world/duel-server':
         specifier: workspace:*
         version: link:../../packages/duel-server
     devDependencies:
@@ -51,7 +51,7 @@ importers:
 
   packages/duel-engine:
     dependencies:
-      '@project-palacio/duel-content':
+      '@duel-for-the-world/duel-content':
         specifier: workspace:*
         version: link:../duel-content
     devDependencies:
@@ -61,10 +61,10 @@ importers:
 
   packages/duel-server:
     dependencies:
-      '@project-palacio/duel-content':
+      '@duel-for-the-world/duel-content':
         specifier: workspace:*
         version: link:../duel-content
-      '@project-palacio/duel-engine':
+      '@duel-for-the-world/duel-engine':
         specifier: workspace:*
         version: link:../duel-engine
       ws:

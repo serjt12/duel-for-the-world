@@ -45,9 +45,98 @@ h1 {
 /* Main menu */
 
 .menu {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
+  overflow: hidden;
+  border-radius: 14px;
+}
+
+/* Only the home step renders the backdrop (renderMenuBackdrop()) -- the
+   vs-computer setup step reuses .menu with no figures behind it, so this
+   extra room (for the center figure to peek up from below the panel --
+   see .menu-backdrop-figure--center) is scoped here, not on .menu itself. */
+.menu--home {
+  padding-bottom: 90px;
+}
+
+/* A world worth fighting over, behind the menu itself -- see
+   ui/menuBackdrop.ts. Everything real menu content sits above it. */
+.menu-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.menu-backdrop-globe {
+  position: absolute;
+  top: 4%;
+  left: 50%;
+  width: 42%;
+  max-width: 300px;
+  min-width: 160px;
+  transform: translateX(-50%);
+  opacity: 0.16;
+  filter: grayscale(1) brightness(1.6);
+}
+
+.menu-backdrop-figure {
+  position: absolute;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 50%;
+  border: 2px solid rgba(201, 162, 39, 0.28);
+  box-shadow: 0 0 44px rgba(0, 0, 0, 0.55);
+}
+
+.menu-backdrop-figure img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(0.55) sepia(0.2) brightness(0.85) contrast(1.05);
+}
+
+.menu-backdrop-figure--left {
+  top: 2%;
+  left: -10%;
+  width: 46%;
+  opacity: 0.5;
+}
+
+.menu-backdrop-figure--right {
+  top: 6%;
+  right: -12%;
+  width: 50%;
+  opacity: 0.5;
+}
+
+.menu-backdrop-figure--center {
+  /* Was opacity 0.38 with nothing below the panel to peek through --
+     the panel sat flush against the menu's own bottom edge, so this
+     figure was almost entirely hidden behind it (see .menu--home's
+     padding-bottom, which opens up the room this needed). */
+  bottom: -18%;
+  left: 50%;
+  width: 48%;
+  transform: translateX(-50%);
+  opacity: 0.68;
+}
+
+.menu-backdrop-fade {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 35%, rgba(20, 22, 28, 0.1) 0%, rgba(20, 22, 28, 0.5) 65%, var(--bg) 100%);
+}
+
+.menu .brand,
+.menu .menu-panel,
+.menu .menu-row {
+  position: relative;
+  z-index: 1;
 }
 
 .app-title {
@@ -241,6 +330,36 @@ button.danger {
 .join-row input {
   flex: 1;
   text-transform: uppercase;
+}
+
+.quickmatch-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.quickmatch-panel .subtitle {
+  margin: 0;
+  font-size: 0.85em;
+}
+
+.quickmatch-panel--waiting {
+  align-items: center;
+  text-align: center;
+}
+
+.quickmatch-status {
+  margin: 0;
+  color: var(--accent-gold);
+  font-weight: bold;
+}
+
+.lobby-friend-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--panel-border);
 }
 
 /* Board */
@@ -633,6 +752,23 @@ button.danger {
   filter: grayscale(0.4) brightness(0.7);
 }
 
+.card--locked .card-art-img {
+  filter: grayscale(0.9) brightness(0.5);
+}
+
+.card--locked .card-name,
+.card--locked .card-stats,
+.card--locked .card-tag,
+.card--locked .card-rules {
+  opacity: 0.5;
+}
+
+.card--locked .card-status {
+  color: var(--accent-gold);
+  font-style: normal;
+  font-weight: 600;
+}
+
 .card.clickable {
   cursor: pointer;
   outline: 2px solid transparent;
@@ -769,7 +905,14 @@ button.danger {
   opacity: 0.92;
 }
 
-.menu-backdrop {
+/* Full-screen click-catcher that dismisses the in-game pause menu when
+   you tap outside it (see renderBoard.ts). Deliberately NOT named
+   .menu-backdrop -- that class is ui/menuBackdrop.ts's decorative main-menu
+   backdrop, a completely different, unrelated element; the two used to
+   collide under the same class name, which broke the main menu's own
+   backdrop positioning (it was picking up this rule's position:fixed;
+   z-index:40 instead of its own position:absolute;z-index:0). */
+.board-menu-backdrop {
   position: fixed;
   inset: 0;
   z-index: 40;
@@ -1007,7 +1150,8 @@ body.is-dragging * {
   .headline-toast,
   .election-chip,
   .paper,
-  .ballot {
+  .ballot,
+  .unlock-reveal-card {
     animation: none !important;
     transition: none !important;
   }
@@ -1779,6 +1923,55 @@ body.is-dragging * {
   margin-top: 12px;
 }
 
+/* A new Field Guide entry, revealed the moment an offline win unlocks it. */
+.unlock-reveal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin: 14px 0 4px;
+  padding: 14px 10px 12px;
+  border: 1px dashed #c9a227;
+  background: #fbf6e6;
+  text-align: center;
+}
+
+.unlock-reveal-label {
+  font-family: "Arial Black", Arial, sans-serif;
+  font-size: 0.85em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #a8790a;
+}
+
+.unlock-reveal-card {
+  margin: 8px 0 6px;
+  transform: rotate(-3deg);
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.35));
+  animation: unlock-pop 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.3);
+}
+
+@keyframes unlock-pop {
+  from {
+    opacity: 0;
+    transform: rotate(-3deg) scale(0.3);
+  }
+  60% {
+    opacity: 1;
+    transform: rotate(-3deg) scale(1.12);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(-3deg) scale(1);
+  }
+}
+
+.unlock-reveal-name {
+  font-family: "Arial Black", Arial, sans-serif;
+  font-size: 1.05em;
+  color: #1c1b22;
+}
+
 /* Winners get a shower of ballots. */
 .ballots {
   position: absolute;
@@ -2247,6 +2440,28 @@ body.phone-layout .log-panel {
   font-style: italic;
 }
 
+/* The "restart" escape hatch: only shows up after several blocked
+   attempts on the same step (see coach.ts's STUCK_THRESHOLD), quiet
+   enough not to compete with the tip itself. */
+.coach-stuck {
+  margin: 8px 0 0;
+  padding-top: 6px;
+  border-top: 1px solid rgba(232, 230, 223, 0.16);
+  color: var(--text-dim);
+  font-size: 0.92em;
+}
+
+.coach-stuck-restart {
+  min-height: 0;
+  padding: 2px 4px;
+  border: none;
+  background: none;
+  color: var(--accent-gold);
+  text-decoration: underline;
+  font-size: inherit;
+  cursor: pointer;
+}
+
 .coach-actions {
   display: flex;
   justify-content: flex-end;
@@ -2412,6 +2627,212 @@ body.phone-layout .log-panel {
     padding: 6px 12px;
   }
 }
+
+/* --- Card Shop / Field Guide (ui/renderShop.ts) ---------------------------- */
+
+.shop-panel {
+  width: min(760px, 100%);
+}
+
+.shop-progress-bar {
+  height: 10px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.shop-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-gold), var(--accent-green));
+  transition: width 300ms ease;
+}
+
+.shop-next-line {
+  margin: 0;
+  color: var(--accent-gold);
+  font-weight: 600;
+}
+
+.shop-next-line--done {
+  color: var(--accent-green);
+}
+
+/* The spotlight: the selected Dex entry, large. */
+
+.dex-spotlight {
+  display: flex;
+  gap: 14px;
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.dex-spotlight .card {
+  flex: none;
+}
+
+.dex-spotlight-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.dex-spotlight-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.dex-spotlight-number {
+  font-family: monospace;
+  color: var(--text-dim);
+  font-size: 0.95em;
+}
+
+.dex-spotlight-type {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 0.85em;
+  font-weight: 600;
+}
+
+.dex-spotlight-flavor {
+  margin: 0;
+  font-style: italic;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+.dex-spotlight-flavor--locked {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--accent-gold);
+}
+
+@media (max-width: 480px) {
+  .dex-spotlight {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .dex-spotlight-header {
+    justify-content: center;
+  }
+}
+
+/* The mystery card: same frame as a real card, dark art, "???". */
+
+.dex-mystery-img {
+  filter: grayscale(1) brightness(0.16) contrast(1.35);
+}
+
+.dex-mystery-card .card-name,
+.dex-mystery-card .card-tag {
+  opacity: 0.6;
+}
+
+/* Type filter chips. */
+
+.dex-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.dex-chip {
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font-size: 0.88em;
+  white-space: nowrap;
+}
+
+.dex-chip--active {
+  background: var(--accent-gold);
+  border-color: var(--accent-gold);
+  color: #171106;
+  font-weight: 700;
+}
+
+/* The dex grid: small numbered thumbnails, click to spotlight. */
+
+.dex-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  gap: 8px;
+  max-height: 34vh;
+  overflow-y: auto;
+  padding: 6px 2px;
+}
+
+.dex-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 4px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.dex-tile--selected {
+  border-color: var(--accent-gold);
+  background: rgba(224, 184, 74, 0.12);
+}
+
+.dex-tile-art {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 5px;
+  overflow: hidden;
+  background: #0f1117;
+}
+
+.dex-tile-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.dex-tile--locked .dex-tile-img {
+  filter: grayscale(1) brightness(0.16) contrast(1.35);
+}
+
+.dex-tile-mystery {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 1.3em;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.75);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.dex-tile-mystery--big {
+  font-size: 2.4em;
+}
+
+.dex-tile-number {
+  font-family: monospace;
+  font-size: 0.72em;
+  color: var(--text-dim);
+}
+
+.dex-tile--selected .dex-tile-number {
+  color: var(--accent-gold);
+}
+
 
 /* --- Game feel: turn banner, attack odds, ready attackers ------------------ */
 
@@ -2602,6 +3023,16 @@ body.phone-layout .log-panel {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  /* The title/tagline sit over a busy photo backdrop (menuBackdrop.ts), so
+     text-shadow alone can't guarantee legibility -- some regions of the
+     portraits are close enough in brightness to the gold/gray text that a
+     shadow's edge-darkening isn't enough (measured: the tagline dropped as
+     low as ~2.7:1 contrast in spots, against a WCAG AA minimum of 4.5:1 for
+     text this size). A solid-ish backing plate guarantees the contrast
+     regardless of what's behind it. */
+  background: rgba(16, 17, 22, 0.55);
+  padding: 8px 16px 10px;
+  border-radius: 10px;
 }
 
 .brand .app-title {
@@ -2611,11 +3042,16 @@ body.phone-layout .log-panel {
   text-transform: uppercase;
   text-align: left;
   line-height: 1.05;
+  /* The title sits over the menu's photo backdrop (menuBackdrop.ts), not
+     a flat color -- a shadow keeps it legible over whatever's behind it,
+     independent of how dark that backdrop happens to be. */
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65), 0 0 18px rgba(0, 0, 0, 0.55);
 }
 
 .brand .brand-tagline {
   margin: 4px 0 0;
   text-align: left;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65), 0 0 14px rgba(0, 0, 0, 0.5);
 }
 
 .brand-name {

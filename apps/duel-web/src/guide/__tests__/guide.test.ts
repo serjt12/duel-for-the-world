@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { PlayerAction, PublicDuelState } from "@project-palacio/duel-server";
-import { DuelRoom, redactStateFor } from "@project-palacio/duel-server/offline";
+import type { PlayerAction, PublicDuelState } from "@duel-for-the-world/duel-server";
+import { DuelRoom, redactStateFor } from "@duel-for-the-world/duel-server/offline";
 import { ScriptedSeat } from "../ScriptedSeat";
 import {
   fieldInstance,
@@ -73,9 +73,9 @@ describe("the guided first duel", () => {
     }
     const final = view();
     expect(final.winnerId).toBe(GUIDE_YOU);
-    expect(final.duelists[GUIDE_YOU].mandate).toBe(14);
-    expect(final.polls[GUIDE_YOU].total).toBe(25);
-    expect(final.polls[GUIDE_THEM].total).toBe(18);
+    expect(final.duelists[GUIDE_YOU].mandate).toBe(20); // 26 - 2 (Talk-Show Host) - 4 (Leaked Emails)
+    expect(final.polls[GUIDE_YOU].total).toBe(31); // 20 mandate + 8 campaign ATK + 3 bonus votes
+    expect(final.polls[GUIDE_THEM].total).toBe(24); // 26 - 1 (lost Host) - 1 (lost Protester)
   });
 
   it("blocks moves that aren't the tip's", () => {

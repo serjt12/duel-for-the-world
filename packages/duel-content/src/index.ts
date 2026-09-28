@@ -5,6 +5,14 @@ export type { ActorCardDefinition, ActorRole, ActorTier, Rarity } from "./ActorC
 export { EDITIONS, EMBASSY_TEXT } from "./Edition";
 export type { Edition } from "./Edition";
 export { cardsOfEdition, embassyChoiceIn, matchesFilter } from "./editions";
+export {
+  hasUnlocks,
+  nextUnlock,
+  starterCardsOfEdition,
+  unlockOrderOfEdition,
+  unlockedCardsOfEdition,
+} from "./Unlocks";
+export type { UnlockStep } from "./Unlocks";
 export type { PolicyCardDefinition, PolicyKind } from "./PolicyCard";
 export type { ScandalCardDefinition, ScandalKind } from "./ScandalCard";
 export type { CardDefinition } from "./CardDefinition";

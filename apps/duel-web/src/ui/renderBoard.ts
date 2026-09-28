@@ -1,21 +1,21 @@
-import { ACTOR_CARDS, CARDS, POLICY_CARDS } from "@project-palacio/duel-content";
-import type { ActorCardId, CardId, PolicyCardId, ScandalCardId } from "@project-palacio/duel-content";
+import { ACTOR_CARDS, CARDS, POLICY_CARDS } from "@duel-for-the-world/duel-content";
+import type { ActorCardId, CardId, PolicyCardId, ScandalCardId } from "@duel-for-the-world/duel-content";
 import {
   ACTOR_ZONE_COUNT,
   BACKROOM_ZONE_COUNT,
   policyTarget,
   RUNOFF_DAMAGE_MULTIPLIER,
   RUNOFF_MARGIN,
-} from "@project-palacio/duel-engine";
-import type { ActorFacing, ActorStance, DeployOptions } from "@project-palacio/duel-engine";
-import type { ActorTarget } from "@project-palacio/duel-content";
+} from "@duel-for-the-world/duel-engine";
+import type { ActorFacing, ActorStance, DeployOptions } from "@duel-for-the-world/duel-engine";
+import type { ActorTarget } from "@duel-for-the-world/duel-content";
 import type {
   PlayerSlot,
   PublicDuelistView,
   PublicFieldActor,
   PublicFieldPolicy,
   PublicFieldScandal,
-} from "@project-palacio/duel-server";
+} from "@duel-for-the-world/duel-server";
 import type { ClientState, Interaction } from "../state/ClientState";
 import type { GameClient } from "../net/GameClient";
 import { noteFieldInstance, noteHand, renderCardBack, renderCardFace } from "./cardView";
@@ -1202,7 +1202,7 @@ export function renderBoard(
       handHint ? el("span", { className: "hand-hint" }, [handHint]) : null,
     ]),
     handRow,
-    menuOpen ? el("div", { className: "menu-backdrop", onclick: idle }) : null,
+    menuOpen ? el("div", { className: "board-menu-backdrop", onclick: idle }) : null,
   ]);
   if (phone) fitStage(board);
   return board;

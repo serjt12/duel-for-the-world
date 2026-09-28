@@ -1,4 +1,4 @@
-import type { CardId, Edition } from "@project-palacio/duel-content";
+import type { CardId, Edition } from "@duel-for-the-world/duel-content";
 import { DuelRoom } from "./DuelRoom";
 import { generateRoomCode } from "./RoomCode";
 

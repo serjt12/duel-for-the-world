@@ -3,8 +3,8 @@
 //
 //   pnpm docs:cards
 import { writeFileSync } from "node:fs";
-import { ACTOR_CARDS, CARDS, EDITIONS, POLICY_CARDS, cardsOfEdition, rulesText } from "@project-palacio/duel-content";
-import type { CardId, Edition } from "@project-palacio/duel-content";
+import { ACTOR_CARDS, CARDS, EDITIONS, POLICY_CARDS, cardsOfEdition, rulesText } from "@duel-for-the-world/duel-content";
+import type { CardId, Edition } from "@duel-for-the-world/duel-content";
 
 const EDITION_TITLES: Record<Edition, string> = {
   world: "World Edition (English, the global base game)",

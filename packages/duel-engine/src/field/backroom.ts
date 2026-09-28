@@ -1,4 +1,4 @@
-import type { PolicyCardId } from "@project-palacio/duel-content";
+import type { PolicyCardId } from "@duel-for-the-world/duel-content";
 import { BACKROOM_ZONE_COUNT } from "../config/DuelConfig";
 import type { DuelistState } from "../duelists/DuelistState";
 import type { DuelState } from "../duel/DuelState";

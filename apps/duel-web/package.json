@@ -1,5 +1,5 @@
 {
-  "name": "@project-palacio/duel-web",
+  "name": "@duel-for-the-world/duel-web",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -24,9 +24,9 @@
     "@capacitor/android": "^8.0.0"
   },
   "dependencies": {
-    "@project-palacio/duel-content": "workspace:*",
-    "@project-palacio/duel-engine": "workspace:*",
-    "@project-palacio/duel-server": "workspace:*",
+    "@duel-for-the-world/duel-content": "workspace:*",
+    "@duel-for-the-world/duel-engine": "workspace:*",
+    "@duel-for-the-world/duel-server": "workspace:*",
     "@capacitor/core": "^8.0.0"
   }
 }

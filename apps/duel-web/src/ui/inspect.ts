@@ -1,5 +1,5 @@
-import { CARDS, rulesText } from "@project-palacio/duel-content";
-import type { CardId } from "@project-palacio/duel-content";
+import { CARDS, rulesText } from "@duel-for-the-world/duel-content";
+import type { CardId } from "@duel-for-the-world/duel-content";
 import { describeCard } from "./cardInfo";
 import { renderCardFace } from "./cardView";
 import { el } from "./dom";

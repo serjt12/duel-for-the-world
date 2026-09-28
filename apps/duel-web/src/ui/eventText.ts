@@ -1,6 +1,6 @@
-import { CARDS } from "@project-palacio/duel-content";
-import type { CardId } from "@project-palacio/duel-content";
-import type { DuelEvent, DuelistId } from "@project-palacio/duel-engine";
+import { CARDS } from "@duel-for-the-world/duel-content";
+import type { CardId } from "@duel-for-the-world/duel-content";
+import type { DuelEvent, DuelistId } from "@duel-for-the-world/duel-engine";
 import { flavor } from "./flavor";
 
 // Turns the engine's duel log into short sentences for the Headlines

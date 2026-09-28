@@ -1,5 +1,5 @@
-import type { Edition } from "@project-palacio/duel-content";
-import type { PlayerAction } from "@project-palacio/duel-server";
+import type { Edition } from "@duel-for-the-world/duel-content";
+import type { PlayerAction } from "@duel-for-the-world/duel-server";
 
 /**
  * What the UI needs from "the other side" of a duel: either the online

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ActorCardId } from "@project-palacio/duel-content";
+import type { ActorCardId } from "@duel-for-the-world/duel-content";
 import type { DuelistState } from "../../duelists/DuelistState";
 import type { DuelPhase } from "../../duel/DuelPhase";
 import type { DuelState } from "../../duel/DuelState";
@@ -94,7 +94,7 @@ describe("Election Night", () => {
   });
 
   it("a clear lead (more than the runoff margin) wins outright as the election turn ends", () => {
-    const state = createState({ duelist1: { mandate: 20, field: [actor("la-tribuna")] } }); // 24 vs 20
+    const state = createState({ duelist1: { mandate: 21, field: [actor("la-tribuna")] } }); // 25 vs 20
     advancePhase(state);
     expect(state.winnerId).toBe("duelist1");
     expect(state.turnNumber).toBe(ELECTION_TURN); // no new turn starts
@@ -104,12 +104,12 @@ describe("Election Night", () => {
       kind: "election-held",
       round: "first",
       leaderId: "duelist1",
-      votes: { duelist1: { total: 24 }, duelist2: { total: 20 } },
+      votes: { duelist1: { total: 25 }, duelist2: { total: 20 } },
     });
   });
 
   it("a close race (within the margin) calls a runoff and play goes on", () => {
-    const state = createState({ duelist1: { mandate: 23 } }); // 23 vs 20: margin 3
+    const state = createState({ duelist1: { mandate: 23 } }); // 23 vs 20: within the margin (4)
     advancePhase(state);
     expect(state.winnerId).toBeNull();
     expect(state.election).toEqual({ turn: ELECTION_TURN + RUNOFF_EXTRA_TURNS, runoff: true });

@@ -1,5 +1,5 @@
 {
-  "name": "@project-palacio/duel-server",
+  "name": "@duel-for-the-world/duel-server",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -18,8 +18,8 @@
     "docs:cards": "tsx scripts/generate-card-docs.ts"
   },
   "dependencies": {
-    "@project-palacio/duel-content": "workspace:*",
-    "@project-palacio/duel-engine": "workspace:*",
+    "@duel-for-the-world/duel-content": "workspace:*",
+    "@duel-for-the-world/duel-engine": "workspace:*",
     "ws": "^8.18.0"
   },
   "devDependencies": {

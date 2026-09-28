@@ -1,5 +1,5 @@
-import { ACTOR_CARDS } from "@project-palacio/duel-content";
-import type { Passive } from "@project-palacio/duel-content";
+import { ACTOR_CARDS } from "@duel-for-the-world/duel-content";
+import type { Passive } from "@duel-for-the-world/duel-content";
 import type { FieldActor } from "./FieldActor";
 
 type PassiveKind = Passive["kind"];

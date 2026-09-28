@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { CardId } from "@project-palacio/duel-content";
+import type { CardId } from "@duel-for-the-world/duel-content";
 import { createDuel } from "../createDuel";
 import type { DuelState } from "../DuelState";
 import { advancePhase } from "../../systems/TurnSystem";
@@ -62,7 +62,7 @@ describe("a full duel, end to end", () => {
     }
 
     expect(duel.winnerId).toBe("duelist1");
-    expect(duel.duelists.duelist2.mandate).toBe(0); // 20 - 4*5 = 0, on the 5th landed attack
+    expect(duel.duelists.duelist2.mandate).toBe(0); // 26 - 4*7 = -2, clamped to 0 on the 7th landed attack
 
     // Confirm the duel is really over: no further state change once won.
     const stateBefore = JSON.stringify(duel);
@@ -91,7 +91,7 @@ describe("a full duel, end to end", () => {
 
     advanceTo(duel, (d) => d.phase === "campaign-2");
     expect(activatePolicy(duel, "decreto-de-emergencia")).toEqual({ ok: true });
-    expect(duel.duelists.duelist1.mandate).toBe(25); // 20 + 5
+    expect(duel.duelists.duelist1.mandate).toBe(31); // 26 + 5
 
     // Reach duelist1's next turn to equip and attack (can't attack the
     // turn it was deployed).
@@ -111,7 +111,7 @@ describe("a full duel, end to end", () => {
       ok: true,
       outcome: { attackerDestroyed: false, defenderDestroyed: false, mandateDamage: 5 },
     });
-    expect(duel.duelists.duelist2.mandate).toBe(15);
+    expect(duel.duelists.duelist2.mandate).toBe(21); // 26 - 5
   });
 
   it("lets a Set Escandalo de Corrupcion ambush an attack on its controller's Actor", () => {

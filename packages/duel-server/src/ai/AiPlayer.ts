@@ -1,4 +1,4 @@
-import type { DuelistId } from "@project-palacio/duel-engine";
+import type { DuelistId } from "@duel-for-the-world/duel-engine";
 import type { PlayerAction } from "../protocol/Messages";
 import { redactStateFor } from "../protocol/redact";
 import type { ActionResult, DuelRoom } from "../rooms/DuelRoom";

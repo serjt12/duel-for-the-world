@@ -1,4 +1,4 @@
-import { ACTOR_CARDS, isActorCardId, POLICY_CARDS } from "@project-palacio/duel-content";
+import { ACTOR_CARDS, isActorCardId, POLICY_CARDS } from "@duel-for-the-world/duel-content";
 import type { DuelState } from "../duel/DuelState";
 import { equipsOf } from "../field/backroom";
 import type { FieldActor } from "../field/FieldActor";
@@ -45,7 +45,8 @@ export function getEffectiveStats(actor: FieldActor, state: DuelState): Effectiv
 
   const perEmbassy = passiveOf(actor, "atk-per-embassy-actor");
   if (perEmbassy) {
-    atk += perEmbassy.amount * controller.archive.filter((cardId) => isActorCardId(cardId)).length;
+    const uncapped = perEmbassy.amount * controller.archive.filter((cardId) => isActorCardId(cardId)).length;
+    atk += perEmbassy.max === undefined ? uncapped : Math.min(uncapped, perEmbassy.max);
   }
 
   return { atk: Math.max(0, atk), def: Math.max(0, def) };

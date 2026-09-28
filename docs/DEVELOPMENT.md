@@ -24,7 +24,7 @@ or add `?layout=phone` to the address.
   rules and checks you win the election 25 to 18. If you change a card used
   in the tutorial (see `guide/script.ts`), run it.
 - The server smoke test runs against a live server:
-  `pnpm --filter @project-palacio/duel-server smoke-test` (start the server
+  `pnpm --filter @duel-for-the-world/duel-server smoke-test` (start the server
   first).
 
 ## Balance

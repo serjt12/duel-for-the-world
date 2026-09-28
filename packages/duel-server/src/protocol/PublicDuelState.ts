@@ -1,5 +1,5 @@
-import type { CardId, Edition, PolicyCardId } from "@project-palacio/duel-content";
-import type { ActorFacing, ActorStance, DuelEvent, DuelistId, DuelPhase, VoteCount } from "@project-palacio/duel-engine";
+import type { CardId, Edition, PolicyCardId } from "@duel-for-the-world/duel-content";
+import type { ActorFacing, ActorStance, DuelEvent, DuelistId, DuelPhase, VoteCount } from "@duel-for-the-world/duel-engine";
 
 // A field Actor as shown to a particular viewer. A face-up Actor (either
 // stance) reveals everything; a face-down Resistance-stance Actor hides

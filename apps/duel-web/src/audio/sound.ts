@@ -1,4 +1,4 @@
-import type { DuelEvent, DuelistId } from "@project-palacio/duel-engine";
+import type { DuelEvent, DuelistId } from "@duel-for-the-world/duel-engine";
 import { onSettingsChange, settings } from "./settings";
 import { MUSIC_STEP_SECONDS, playCrowd, playMusicStep, playRecipe, prepareCrowd } from "./synth";
 import type { CrowdMood, SfxName } from "./synth";

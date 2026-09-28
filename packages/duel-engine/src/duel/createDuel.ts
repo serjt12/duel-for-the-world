@@ -1,4 +1,4 @@
-import type { CardId } from "@project-palacio/duel-content";
+import type { CardId } from "@duel-for-the-world/duel-content";
 import { ELECTION_TURN, STARTING_HAND_SIZE, STARTING_MANDATE } from "../config/DuelConfig";
 import type { DuelistId } from "../duelists/DuelistId";
 import type { DuelistState } from "../duelists/DuelistState";

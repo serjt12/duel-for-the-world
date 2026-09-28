@@ -1,4 +1,4 @@
-import type { CardId } from "@project-palacio/duel-content";
+import type { CardId } from "@duel-for-the-world/duel-content";
 
 // Card illustrations: original cartoon archetypes, not depictions of any
 // real person (same house rule as the card content itself).

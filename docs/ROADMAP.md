@@ -35,9 +35,12 @@ Owner decisions so far:
   attack targets that show what the attack would do.
 - [x] Bigger key text on the phone layout (field cards show name and
   ATK/DEF big; long-press for the rest).
-- [ ] Playtests on real phones. Tune match length (a quick match with an
-  earlier election?).
-- [ ] Re-check Lobbying Deal.
+- [x] Playtests on real phones. Match length tuned (round 16). The owner
+  played several matches on-device and confirmed sound, vibration and text
+  size all work; field-card text is intentionally small on the phone
+  layout -- long-press (or right-click on a computer) shows the full card.
+- [x] Re-check Lobbying Deal: trimmed from +1 ATK/+1 DEF to +1 ATK only
+  (round 16) -- see the comment on the card in WorldCards.ts.
 
 ### Phase 3: Google Play setup (in parallel)
 
@@ -47,9 +50,10 @@ Owner decisions so far:
   `pnpm android:bundle`.
 - [x] Privacy policy page and store listing texts (`store/`).
 - [ ] Google Play developer account ($25, one-time, identity check).
-- [ ] Create the upload key and build the first `.aab`.
-- [ ] Host the privacy policy at a public address.
-- [ ] Phone screenshots for the listing.
+- [x] Create the upload key and build the first `.aab`.
+- [x] Host the privacy policy at a public address: https://serjt12.github.io/duel-for-the-world/
+- [x] Phone screenshots for the listing: 5 landscape shots (main menu,
+  tutorial, busy board, a Scandal, Election Night) captured and in `store/`.
 - [ ] A new personal account needs a **closed test with 12 testers for 14
   days** before going public.
 
@@ -58,20 +62,46 @@ Owner decisions so far:
 - [x] Reconnect (a dropped connection can rejoin its seat), a turn timer
   (an AFK opponent can't stall a match forever), and room cleanup (see
   [docs/SERVER.md](SERVER.md)).
-- [ ] Host the server on Fly.io at a secure (wss://) address -- deploy
-  files are ready (`Dockerfile`, `fly.toml`); this step is the owner
-  running `fly deploy` from their own account.
+- [x] Host the server on Fly.io at a secure (wss://) address: live at
+  `wss://duel-for-the-world.fly.dev`, one machine in `iad`. (See
+  [docs/SERVER.md](SERVER.md) -- "Current status" for the app-name story.)
 - [ ] Invite a friend by link or room code.
-- [ ] Quick match, with a clearly labelled "play the computer instead" when
-  nobody is online.
+- [x] Quick match, with a clearly labelled "play the computer instead" when
+  nobody is online. Built (round 17) exactly as scoped: a new
+  `packages/duel-server/src/rooms/MatchmakingQueue.ts` (a plain, socket-free,
+  unit-tested "one waiting ticket per edition" data structure -- server.ts
+  passes it a WebSocket, but it doesn't know that) pairs two `quick-match`
+  requests into a real `DuelRoom` the same way `create-room`/`join-room`
+  already do, and sends both sides a new `match-found` message at once.
+  The lobby (`ui/renderLobby.ts`) has a "Quick Match" section above the
+  existing "Play a Friend" one; while searching it shows "Looking for an
+  opponent..." with a Cancel button. A 7s client-side timeout
+  (`app.ts`'s `QUICK_MATCH_TIMEOUT_MS`) falls back to an offline AI duel,
+  in the edition that was requested, if nobody's found in time -- same
+  fallback path fires if the connection drops while waiting. A cancelled
+  or abandoned search is cleaned out of the queue server-side too (on an
+  explicit `cancel-quick-match` message, or the socket closing).
 
 ### Phase 5: Ads and retention
 
 - [ ] AdMob, between matches only and never during one, with a frequency cap.
   Consent form for EEA/UK players.
 - [ ] Optional rewarded ads.
-- [ ] A "World Tour" campaign against computer Leaders; card unlocks; a daily
-  challenge; later, a deck builder.
+- [x] Card unlocks (World Edition): a 20-card starter set, unlocking the
+  other 19 cards two offline wins vs. the computer apart, up to full
+  unlock at 38 wins. Online play always uses the whole edition -- only
+  offline decks are gated. The Field Guide (Pokedex-style, off the "Play
+  vs Computer" menu) shows progress. Colombia is unaffected (always fully
+  unlocked; no curated starter set yet). See
+  `packages/duel-content/src/Unlocks.ts`.
+- [x] Unlocks are taught, not just built: the guided tutorial's last step
+  and the always-available "How to Play" panel both mention that offline
+  wins unlock more of the roster, pointing at the Field Guide. The win
+  screen itself reveals a newly-unlocked card on the spot (name, art, a
+  pop-in animation, and a button straight into its Field Guide entry) --
+  see `ui/finale.ts`'s `unlockedCardId` plumbing.
+- [ ] A "World Tour" campaign against computer Leaders; a daily challenge;
+  later, a deck builder.
 
 ### Phase 6: Play Store launch
 
@@ -87,3 +117,11 @@ Owner decisions so far:
 - [ ] iOS (same code; needs a Mac or a cloud build service, and the Apple
   Developer Program).
 - [ ] More country editions after Colombia.
+- [ ] A leaderboard. Not a small add-on: `duel-server` currently has no
+  accounts, no persistent player identity, and no database (a stateless
+  Fly.io WS server that forgets each `DuelRoom` once the match ends). Needs,
+  at minimum: a durable identity (device id + chosen name, short of full
+  accounts), a persistence layer (Fly Postgres or a volume-backed SQLite),
+  a definition of what's ranked (online room-code wins -- offline vs. the
+  computer has no one to rank against), and an endpoint to submit/query
+  standings. Scope as its own phase after launch, not folded into Phase 5.

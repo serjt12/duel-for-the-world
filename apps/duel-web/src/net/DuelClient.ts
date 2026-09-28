@@ -1,4 +1,4 @@
-import type { Edition } from "@project-palacio/duel-content";
+import type { Edition } from "@duel-for-the-world/duel-content";
 import type { GameClient } from "./GameClient";
 import type {
   ClientMessage,
@@ -6,7 +6,7 @@ import type {
   PlayerSlot,
   PublicDuelState,
   ServerMessage,
-} from "@project-palacio/duel-server";
+} from "@duel-for-the-world/duel-server";
 
 // How long to keep retrying a dropped connection before giving up (a
 // little under the server's own reconnect-grace window, so we don't keep
@@ -31,6 +31,12 @@ export interface DuelClientHandlers {
   onRoomCreated(roomCode: string, you: PlayerSlot, serverProtocolVersion: unknown): void;
   onJoinedRoom(roomCode: string, you: PlayerSlot, serverProtocolVersion: unknown): void;
   onRejoinedRoom(roomCode: string, you: PlayerSlot, serverProtocolVersion: unknown): void;
+  // Nobody else was waiting for this edition yet -- this connection is
+  // now the one other quick-match requests get paired with.
+  onQuickMatchWaiting(): void;
+  // Paired with another quick-match request; same meaning as
+  // onRoomCreated/onJoinedRoom, just for both sides at once.
+  onMatchFound(roomCode: string, you: PlayerSlot, serverProtocolVersion: unknown): void;
   onOpponentJoined(): void;
   // The opponent's connection dropped but their seat is still reserved --
   // they may still come back.
@@ -160,6 +166,14 @@ export class DuelClient implements GameClient {
       case "rejoined-room":
         this.handlers.onRejoinedRoom(message.roomCode, message.you, message.protocolVersion);
         return;
+      case "quick-match-waiting":
+        this.handlers.onQuickMatchWaiting();
+        return;
+      case "match-found":
+        this.roomCode = message.roomCode;
+        this.reconnectToken = message.reconnectToken;
+        this.handlers.onMatchFound(message.roomCode, message.you, message.protocolVersion);
+        return;
       case "opponent-joined":
         this.handlers.onOpponentJoined();
         return;
@@ -202,6 +216,14 @@ export class DuelClient implements GameClient {
 
   joinRoom(roomCode: string): void {
     this.send({ type: "join-room", roomCode });
+  }
+
+  quickMatch(edition: Edition = "world"): void {
+    this.send({ type: "quick-match", edition });
+  }
+
+  cancelQuickMatch(): void {
+    this.send({ type: "cancel-quick-match" });
   }
 
   sendAction(action: PlayerAction): void {

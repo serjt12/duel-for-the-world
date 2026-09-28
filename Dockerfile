@@ -3,7 +3,7 @@
 # offline/vs-computer game, which never touch this image.
 #
 # The server runs straight from TypeScript via tsx (same as `pnpm --filter
-# @project-palacio/duel-server start` locally) -- no separate compile
+# @duel-for-the-world/duel-server start` locally) -- no separate compile
 # step, since the whole point is one small process holding open a handful
 # of in-memory WebSocket rooms, not a build artifact to optimize.
 FROM node:22-alpine AS base
@@ -30,4 +30,4 @@ FROM deps AS runtime
 COPY . .
 ENV NODE_ENV=production
 EXPOSE 8080
-CMD ["pnpm", "--filter", "@project-palacio/duel-server", "start"]
+CMD ["pnpm", "--filter", "@duel-for-the-world/duel-server", "start"]

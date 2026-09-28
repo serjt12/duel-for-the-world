@@ -9,7 +9,7 @@
  * message instead of silently broken cards.
  *
  * Deliberately its own tiny module with no imports, exposed as the
- * `@project-palacio/duel-server/protocol-version` subpath: the browser
+ * `@duel-for-the-world/duel-server/protocol-version` subpath: the browser
  * client can import this one runtime value without pulling in server.ts
  * and its Node-only dependencies.
  *

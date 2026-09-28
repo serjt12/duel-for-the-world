@@ -1,4 +1,4 @@
-import type { DuelPhase } from "@project-palacio/duel-engine";
+import type { DuelPhase } from "@duel-for-the-world/duel-engine";
 import { flavor } from "./flavor";
 
 // Single source of truth for phase display text, shared between the phase
@@ -119,5 +119,8 @@ export function generalGuide(): string[] {
   world
     ? "Scandals are Set face-down and fire automatically when their trigger happens (an attack, a direct attack, an Establishment or Leader being deployed, a Policy, Election Night...), then go to the Embassy. A Scandal whose own cost would knock you out doesn't fire."
     : "Scandals are Set face-down and fire automatically when their trigger happens (an attack, a direct attack, or an Establishment Actor being deployed), then go to La Embajada.",
+  world
+    ? "Playing vs. Computer? Not every politician is in your deck yet -- win offline duels to unlock the rest. The Field Guide (from the main menu) shows the full roster and what's next."
+    : null,
   ].filter((line): line is string => line !== null);
 }

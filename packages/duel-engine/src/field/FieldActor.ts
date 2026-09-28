@@ -1,4 +1,4 @@
-import type { ActorCardId } from "@project-palacio/duel-content";
+import type { ActorCardId } from "@duel-for-the-world/duel-content";
 import type { DuelistId } from "../duelists/DuelistId";
 
 // Campaign Stance is always face-up (you can't attack from face-down

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ActorCardId, CardId } from "@project-palacio/duel-content";
+import type { ActorCardId, CardId } from "@duel-for-the-world/duel-content";
 import type { DuelistState } from "../../duelists/DuelistState";
 import type { DuelPhase } from "../../duel/DuelPhase";
 import type { DuelState } from "../../duel/DuelState";

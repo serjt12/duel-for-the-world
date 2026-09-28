@@ -1,5 +1,5 @@
-import { CARDS } from "@project-palacio/duel-content";
-import type { CardId } from "@project-palacio/duel-content";
+import { CARDS } from "@duel-for-the-world/duel-content";
+import type { CardId } from "@duel-for-the-world/duel-content";
 
 export interface CardDisplay {
   name: string;

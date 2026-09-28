@@ -1,12 +1,12 @@
-import { ACTOR_CARDS, CARDS, POLICY_CARDS, embassyChoiceIn } from "@project-palacio/duel-content";
-import type { ActorCardId, CardId, InstantEffect, PolicyCardId, ScandalCardId } from "@project-palacio/duel-content";
+import { ACTOR_CARDS, CARDS, POLICY_CARDS, embassyChoiceIn } from "@duel-for-the-world/duel-content";
+import type { ActorCardId, CardId, InstantEffect, PolicyCardId, ScandalCardId } from "@duel-for-the-world/duel-content";
 import {
   ACTOR_ZONE_COUNT,
   BACKROOM_ZONE_COUNT,
   eligibleEmbassyIndices,
   policyTarget,
-} from "@project-palacio/duel-engine";
-import type { DuelistId } from "@project-palacio/duel-engine";
+} from "@duel-for-the-world/duel-engine";
+import type { DuelistId } from "@duel-for-the-world/duel-engine";
 import type { PlayerAction } from "../protocol/Messages";
 import type { PublicDuelState, PublicFieldActor } from "../protocol/PublicDuelState";
 import { searchBestAction } from "./search";

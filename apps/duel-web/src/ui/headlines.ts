@@ -1,5 +1,5 @@
-import type { DuelEvent } from "@project-palacio/duel-engine";
-import type { PublicDuelState } from "@project-palacio/duel-server";
+import type { DuelEvent } from "@duel-for-the-world/duel-engine";
+import type { PublicDuelState } from "@duel-for-the-world/duel-server";
 import type { ClientState } from "../state/ClientState";
 import { el } from "./dom";
 import { describeEvent } from "./eventText";

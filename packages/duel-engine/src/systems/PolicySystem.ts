@@ -1,5 +1,5 @@
-import { isPolicyCardId, POLICY_CARDS } from "@project-palacio/duel-content";
-import type { ActorTarget, PolicyCardDefinition, PolicyCardId } from "@project-palacio/duel-content";
+import { isPolicyCardId, POLICY_CARDS } from "@duel-for-the-world/duel-content";
+import type { ActorTarget, PolicyCardDefinition, PolicyCardId } from "@duel-for-the-world/duel-content";
 import type { DuelState } from "../duel/DuelState";
 import type { DuelistState } from "../duelists/DuelistState";
 import { canRetrieve, resolveInstantEffects } from "../effects/resolveInstantEffects";

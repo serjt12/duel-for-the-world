@@ -1,4 +1,4 @@
-import type { PublicDuelState } from "@project-palacio/duel-server";
+import type { PublicDuelState } from "@duel-for-the-world/duel-server";
 import type { ClientState } from "../state/ClientState";
 import { resetCardMemory } from "./cardView";
 import { prepareFieldFx } from "./fieldFx";

@@ -2,8 +2,9 @@ import { createServer } from "node:http";
 import { pathToFileURL } from "node:url";
 import { WebSocketServer } from "ws";
 import type { WebSocket } from "ws";
-import { EDITIONS } from "@project-palacio/duel-content";
-import type { Edition } from "@project-palacio/duel-content";
+import { EDITIONS } from "@duel-for-the-world/duel-content";
+import type { Edition } from "@duel-for-the-world/duel-content";
+import { MatchmakingQueue } from "./rooms/MatchmakingQueue";
 import { RoomManager } from "./rooms/RoomManager";
 import type { PlayerSlot } from "./rooms/DuelRoom";
 import type { ClientMessage, ServerMessage } from "./protocol/Messages";
@@ -35,6 +36,9 @@ const ROOM_MAX_IDLE_MS = 30 * 60_000;
 const HEARTBEAT_INTERVAL_MS = 30_000;
 
 const roomManager = new RoomManager();
+// At most one waiting player per edition -- see MatchmakingQueue's own
+// comment for why it's socket-agnostic (a plain WebSocket ticket here).
+const matchmakingQueue = new MatchmakingQueue<WebSocket>();
 
 interface ConnectionInfo {
   roomCode: string;
@@ -266,6 +270,73 @@ function handleMessage(socket: WebSocket, raw: { toString(): string }): void {
     return;
   }
 
+  if (message.type === "quick-match") {
+    // Untrusted input: anything but a known edition means the default.
+    const edition = EDITIONS.includes(message.edition as Edition) ? (message.edition as Edition) : "world";
+
+    // A client already seated in a room asking to quick-match too would
+    // otherwise get queued while also mid-duel -- reject it outright
+    // rather than trying to make sense of both at once.
+    if (connections.has(socket)) {
+      send(socket, { type: "error", reason: "already-in-a-room" });
+      return;
+    }
+
+    // Drop any stale queue entry first (e.g. the client asked for World,
+    // then Colombia, without cancelling in between) so a socket is never
+    // waiting under two editions at once.
+    matchmakingQueue.remove(socket);
+    const opponentSocket = matchmakingQueue.match(edition, socket);
+
+    if (!opponentSocket) {
+      send(socket, { type: "quick-match-waiting" });
+      return;
+    }
+
+    // Paired: a real room, seated exactly like create-room + join-room,
+    // just automatic instead of by a shared code.
+    const { roomCode, room } = roomManager.createRoom(undefined, undefined, edition);
+    const firstSlot = room.join();
+    const secondSlot = room.join();
+
+    if (!firstSlot || !secondSlot) {
+      // Unreachable (a brand-new room always has two open slots), but
+      // keeps the types honest rather than asserting.
+      send(opponentSocket, { type: "error", reason: "room-full" });
+      send(socket, { type: "error", reason: "room-full" });
+      return;
+    }
+
+    connections.set(opponentSocket, { roomCode, slot: firstSlot });
+    connections.set(socket, { roomCode, slot: secondSlot });
+    roomSockets.set(roomCode, new Set([opponentSocket, socket]));
+    touch(roomCode);
+
+    send(opponentSocket, {
+      type: "match-found",
+      roomCode,
+      you: firstSlot,
+      protocolVersion: PROTOCOL_VERSION,
+      reconnectToken: room.tokenFor(firstSlot)!,
+    });
+    send(socket, {
+      type: "match-found",
+      roomCode,
+      you: secondSlot,
+      protocolVersion: PROTOCOL_VERSION,
+      reconnectToken: room.tokenFor(secondSlot)!,
+    });
+
+    broadcastState(roomCode);
+    scheduleTurnTimer(roomCode);
+    return;
+  }
+
+  if (message.type === "cancel-quick-match") {
+    matchmakingQueue.remove(socket);
+    return;
+  }
+
   if (message.type === "player-action") {
     const info = connections.get(socket);
 
@@ -305,6 +376,11 @@ function handleMessage(socket: WebSocket, raw: { toString(): string }): void {
 // room is done and it's destroyed; if nobody's left either, it's simply
 // destroyed.
 function handleClose(socket: WebSocket): void {
+  // A socket can be waiting in the matchmaking queue without ever having
+  // been assigned a room (connections only tracks seated sockets), so
+  // this has to run unconditionally, not just when `info` is found below.
+  matchmakingQueue.remove(socket);
+
   const info = connections.get(socket);
   connections.delete(socket);
 

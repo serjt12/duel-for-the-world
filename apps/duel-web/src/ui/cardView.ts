@@ -1,5 +1,5 @@
-import { ACTOR_CARDS, CARDS, rulesText } from "@project-palacio/duel-content";
-import type { ActorCardId, CardId, PolicyCardId } from "@project-palacio/duel-content";
+import { ACTOR_CARDS, CARDS, rulesText } from "@duel-for-the-world/duel-content";
+import type { ActorCardId, CardId, PolicyCardId } from "@duel-for-the-world/duel-content";
 import { CARD_ART, CARD_BACK_ART } from "./cardArt";
 import { describeCard } from "./cardInfo";
 import { el } from "./dom";
@@ -16,6 +16,9 @@ export interface CardViewOptions {
   // The controller's own face-down card: they can see it, but it's
   // dimmed with a ribbon as a reminder the opponent can't.
   hiddenFromOpponent?: boolean;
+  // Not yet unlocked for offline play (ui/renderShop.ts): grayscale art
+  // and a lock badge, same spot the Resistance shield uses.
+  locked?: boolean;
   // Play the "just landed" animation (see noteFieldInstance/noteHand).
   entering?: boolean;
   // A field Actor's current (effective) stats from the server, which may
@@ -97,6 +100,7 @@ export function renderCardFace(cardId: CardId, options: CardViewOptions = {}): H
         `card--${display.category}`,
         options.resistance && "card--resistance",
         options.hiddenFromOpponent && "card--hidden-from-opponent",
+        options.locked && "card--locked",
         options.clickable && "clickable",
         options.selected && "selected",
         options.entering && "card-enter",
@@ -108,6 +112,7 @@ export function renderCardFace(cardId: CardId, options: CardViewOptions = {}): H
       el("div", { className: "card-art" }, [
         artImage(CARD_ART[cardId]),
         options.resistance ? el("div", { className: "card-badge" }, ["\u{1F6E1}"]) : null,
+        options.locked ? el("div", { className: "card-badge" }, ["\u{1F512}"]) : null,
         options.hiddenFromOpponent
           ? el("div", { className: "card-ribbon" }, ["face-down"])
           : null,

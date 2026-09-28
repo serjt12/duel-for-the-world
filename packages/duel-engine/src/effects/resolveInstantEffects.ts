@@ -1,5 +1,5 @@
-import { ACTOR_CARDS, isActorCardId, matchesFilter } from "@project-palacio/duel-content";
-import type { CardFilter, InstantEffect } from "@project-palacio/duel-content";
+import { ACTOR_CARDS, isActorCardId, matchesFilter } from "@duel-for-the-world/duel-content";
+import type { CardFilter, InstantEffect } from "@duel-for-the-world/duel-content";
 import { ACTOR_ZONE_COUNT } from "../config/DuelConfig";
 import type { DuelistId } from "../duelists/DuelistId";
 import type { DuelState } from "../duel/DuelState";

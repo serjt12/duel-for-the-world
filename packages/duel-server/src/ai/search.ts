@@ -1,13 +1,13 @@
-import { ACTOR_CARDS, CARDS, POLICY_CARDS, embassyChoiceIn } from "@project-palacio/duel-content";
-import type { ActorCardId, CardId, PolicyCardId, ScandalCardId } from "@project-palacio/duel-content";
+import { ACTOR_CARDS, CARDS, POLICY_CARDS, embassyChoiceIn } from "@duel-for-the-world/duel-content";
+import type { ActorCardId, CardId, PolicyCardId, ScandalCardId } from "@duel-for-the-world/duel-content";
 import {
   ACTOR_ZONE_COUNT,
   BACKROOM_ZONE_COUNT,
   countVotes,
   eligibleEmbassyIndices,
   policyTarget,
-} from "@project-palacio/duel-engine";
-import type { DuelistId, DuelistState, DuelState, FieldActor, FieldPolicy, FieldScandal } from "@project-palacio/duel-engine";
+} from "@duel-for-the-world/duel-engine";
+import type { DuelistId, DuelistState, DuelState, FieldActor, FieldPolicy, FieldScandal } from "@duel-for-the-world/duel-engine";
 import type { PlayerAction } from "../protocol/Messages";
 import type { PublicDuelState, PublicDuelistView } from "../protocol/PublicDuelState";
 import { buildDefaultDeck, DuelRoom } from "../rooms/DuelRoom";

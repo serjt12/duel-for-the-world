@@ -1,4 +1,4 @@
-import type { DuelPhase } from "@project-palacio/duel-engine";
+import type { DuelPhase } from "@duel-for-the-world/duel-engine";
 import type { ClientState } from "../state/ClientState";
 import { el } from "./dom";
 import { generalGuide, phaseGuide, PHASE_ORDER } from "./phaseInfo";

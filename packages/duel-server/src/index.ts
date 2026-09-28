@@ -1,4 +1,5 @@
 export { RoomManager } from "./rooms/RoomManager";
+export { MatchmakingQueue } from "./rooms/MatchmakingQueue";
 export { DuelRoom } from "./rooms/DuelRoom";
 export type { PlayerSlot, ActionResult } from "./rooms/DuelRoom";
 export { generateRoomCode } from "./rooms/RoomCode";

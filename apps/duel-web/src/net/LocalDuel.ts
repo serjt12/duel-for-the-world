@@ -1,8 +1,8 @@
-import type { CardId, Edition } from "@project-palacio/duel-content";
-import type { DuelistId } from "@project-palacio/duel-engine";
-import type { PlayerAction, PublicDuelState } from "@project-palacio/duel-server";
-import { AiPlayer, DuelRoom, redactStateFor } from "@project-palacio/duel-server/offline";
-import type { ActionResult, AiLevel } from "@project-palacio/duel-server/offline";
+import type { CardId, Edition } from "@duel-for-the-world/duel-content";
+import type { DuelistId } from "@duel-for-the-world/duel-engine";
+import type { PlayerAction, PublicDuelState } from "@duel-for-the-world/duel-server";
+import { AiPlayer, DuelRoom, redactStateFor } from "@duel-for-the-world/duel-server/offline";
+import type { ActionResult, AiLevel } from "@duel-for-the-world/duel-server/offline";
 import type { GameClient } from "./GameClient";
 
 // A duel against the computer, entirely on this device: the same DuelRoom
@@ -33,6 +33,10 @@ export interface LocalDuelSetup {
   level: AiLevel;
   // Stacked decks, in draw order (default: shuffled default decks).
   decks?: { duelist1: CardId[]; duelist2: CardId[] };
+  // Restricts a default (non-`decks`) deal to this pool -- the offline
+  // card-unlock system's currently-unlocked cards. Ignored when `decks`
+  // is given (the tutorial's fixed decks, e.g.).
+  cardPool?: CardId[];
   // Your seat (default: a coin flip, i.e. who goes first).
   humanSeat?: DuelistId;
   // Count the votes when this turn ends instead of the usual turn.
@@ -70,7 +74,7 @@ export class LocalDuel implements GameClient {
   start(): void {
     this.clearTimer();
     const { decks, electionTurn, opponent, level } = this.setup;
-    this.room = new DuelRoom(decks?.duelist1, decks?.duelist2, this.random, this.edition);
+    this.room = new DuelRoom(decks?.duelist1, decks?.duelist2, this.random, this.edition, this.setup.cardPool);
     if (electionTurn !== undefined) this.room.state.election.turn = electionTurn;
     this.human = this.setup.humanSeat ?? (this.random() < 0.5 ? "duelist1" : "duelist2");
     const aiSeat: DuelistId = this.human === "duelist1" ? "duelist2" : "duelist1";

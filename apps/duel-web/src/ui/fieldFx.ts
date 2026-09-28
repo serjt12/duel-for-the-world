@@ -1,7 +1,7 @@
-import { CARDS } from "@project-palacio/duel-content";
-import type { CardId } from "@project-palacio/duel-content";
-import type { DuelEvent, DuelistId } from "@project-palacio/duel-engine";
-import type { PublicDuelState } from "@project-palacio/duel-server";
+import { CARDS } from "@duel-for-the-world/duel-content";
+import type { CardId } from "@duel-for-the-world/duel-content";
+import type { DuelEvent, DuelistId } from "@duel-for-the-world/duel-engine";
+import type { PublicDuelState } from "@duel-for-the-world/duel-server";
 import { renderCardFace } from "./cardView";
 import { el } from "./dom";
 import { flavor } from "./flavor";

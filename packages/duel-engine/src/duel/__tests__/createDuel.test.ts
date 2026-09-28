@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { CARDS } from "@project-palacio/duel-content";
-import type { CardId } from "@project-palacio/duel-content";
+import { CARDS } from "@duel-for-the-world/duel-content";
+import type { CardId } from "@duel-for-the-world/duel-content";
 import { createDuel } from "../createDuel";
 import { STARTING_HAND_SIZE, STARTING_MANDATE } from "../../config/DuelConfig";
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ActorCardId, ScandalCardId } from "@project-palacio/duel-content";
+import type { ActorCardId, ScandalCardId } from "@duel-for-the-world/duel-content";
 import type { DuelistState } from "../../duelists/DuelistState";
 import type { DuelPhase } from "../../duel/DuelPhase";
 import type { DuelState } from "../../duel/DuelState";
@@ -318,10 +318,22 @@ describe("Leaders", () => {
     const state = createState({
       duelist1: {
         field: [actor("government-in-exile", { instanceId: 1 })],
+        archive: ["protester", "bot-farm"],
+      },
+    });
+    expect(getEffectiveStats(d1(state).field[0], state).atk).toBe(4); // 3 + 1 Actor (bot-farm is a Policy, doesn't count)
+  });
+
+  it("the Government-in-Exile's Embassy bonus caps at +2 (5 ATK total)", () => {
+    const state = createState({
+      duelist1: {
+        field: [actor("government-in-exile", { instanceId: 1 })],
         archive: ["protester", "bot-farm", "riot-cop", "career-senator"],
       },
     });
-    expect(getEffectiveStats(d1(state).field[0], state).atk).toBe(6); // 3 + 3 Actors
+    // 3 Actors in the Embassy (protester, riot-cop, career-senator) would be
+    // +3 uncapped, but the passive caps at +2.
+    expect(getEffectiveStats(d1(state).field[0], state).atk).toBe(5);
   });
 
   it("the Eternal Incumbent postpones the election and can't be removed by opposing effects", () => {

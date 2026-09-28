@@ -1,4 +1,4 @@
-import type { PolicyCardId } from "@project-palacio/duel-content";
+import type { PolicyCardId } from "@duel-for-the-world/duel-content";
 import type { DuelistId } from "../duelists/DuelistId";
 
 /**

@@ -1,5 +1,5 @@
-import { CARDS } from "@project-palacio/duel-content";
-import type { PlayerSlot, PublicDuelistView } from "@project-palacio/duel-server";
+import { CARDS } from "@duel-for-the-world/duel-content";
+import type { PlayerSlot, PublicDuelistView } from "@duel-for-the-world/duel-server";
 import type { ClientState } from "../state/ClientState";
 import { renderCardBack, renderCardFace } from "./cardView";
 import { el } from "./dom";

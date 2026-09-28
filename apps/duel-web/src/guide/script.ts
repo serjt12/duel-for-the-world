@@ -1,6 +1,6 @@
-import type { CardId } from "@project-palacio/duel-content";
-import type { DuelistId } from "@project-palacio/duel-engine";
-import type { PlayerAction, PublicDuelState, PublicFieldActor } from "@project-palacio/duel-server";
+import type { CardId } from "@duel-for-the-world/duel-content";
+import type { DuelistId } from "@duel-for-the-world/duel-engine";
+import type { PlayerAction, PublicDuelState, PublicFieldActor } from "@duel-for-the-world/duel-server";
 
 // The guided first duel: a short, fully scripted World Edition match that
 // teaches the basics one step at a time. Both decks are stacked, the
@@ -251,7 +251,7 @@ export const GUIDE_STEPS: GuideStep[] = [
     title: "Equip an Actor",
     text:
       "Lobbying Deal is an Equip: it stays on one of your Actors. " +
-      "Activate it, then tap your Protester: +1 ATK and +1 DEF.",
+      "Activate it, then tap your Protester: +1 ATK.",
     targets: [
       { kind: "hand", cardId: "lobbying-deal" },
       { kind: "menu", label: "Activate" },
@@ -309,6 +309,8 @@ export const GUIDE_STEPS: GuideStep[] = [
     title: "Tutorial complete!",
     text:
       "You know the basics: deploying, stances, attacks, Policies, Scandals and the election. " +
-      "Ready for a real duel?",
+      "This starter roster is just a slice of the full cast -- win duels offline against the " +
+      "computer and new politicians unlock automatically. Check the Field Guide from the main " +
+      "menu any time to see who's next. Ready for a real duel?",
   },
 ];

@@ -1,3 +1,4 @@
+import type { Edition } from "@duel-for-the-world/duel-content";
 import type { ClientState } from "../state/ClientState";
 import type { GameClient } from "../net/GameClient";
 import { renderLobby } from "./renderLobby";
@@ -7,6 +8,11 @@ import type { MenuActions } from "./renderMenu";
 
 export interface AppActions extends MenuActions {
   backToMenu(): void;
+  // Quick match, in the online lobby: no room code needed, paired with
+  // the next other player who asks for the same edition, or falls back
+  // to an offline AI duel after a short wait if nobody shows up.
+  startQuickMatch(edition: Edition): void;
+  cancelQuickMatch(): void;
 }
 
 // The top-level screen dispatcher: the main menu, the online lobby

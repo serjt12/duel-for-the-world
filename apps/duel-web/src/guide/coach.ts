@@ -1,4 +1,4 @@
-import type { PlayerAction } from "@project-palacio/duel-server";
+import type { PlayerAction } from "@duel-for-the-world/duel-server";
 import type { ClientState } from "../state/ClientState";
 import { el } from "../ui/dom";
 import { isPhoneLayout } from "../ui/stage";
@@ -61,7 +61,19 @@ export interface CoachActions {
   next(): void;
   playForReal(): void;
   toMenu(): void;
+  // Deals a fresh scripted duel from the top (see app.ts). The escape
+  // hatch offered once a step has blocked several attempts in a row --
+  // see STUCK_THRESHOLD below.
+  restart(): void;
 }
+
+// After this many blocked attempts on the same step, something's more
+// likely wrong than the player just not having found the right card yet
+// (a stray double-tap on Advance Phase racing the guide's own bookkeeping
+// is the one real way this has happened -- see LocalDuel.sendAction).
+// Rather than leave them stuck on a step whose target no longer matches
+// reality, offer a clean restart.
+const STUCK_THRESHOLD = 3;
 
 // The entrance and the shake play once (per tip, per blocked move), not on
 // every re-render.
@@ -127,6 +139,12 @@ export function renderCoach(state: ClientState, actions: CoachActions): HTMLElem
       el("strong", { className: "coach-title" }, [step.title]),
       el("p", { className: "coach-text" }, [step.text]),
       nudge ? el("p", { className: "coach-nudge" }, [nudge]) : null,
+      blocked >= STUCK_THRESHOLD
+        ? el("p", { className: "coach-stuck" }, [
+            "Not going the way it should? ",
+            el("button", { className: "coach-stuck-restart", onclick: () => actions.restart() }, ["Restart the tutorial"]),
+          ])
+        : null,
       buttons.length > 0 ? el("div", { className: "coach-actions" }, buttons) : null,
     ],
   );

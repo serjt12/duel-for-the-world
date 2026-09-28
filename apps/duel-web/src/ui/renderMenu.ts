@@ -1,9 +1,10 @@
-import type { Edition } from "@project-palacio/duel-content";
+import type { Edition } from "@duel-for-the-world/duel-content";
 import { isGuideDone } from "../guide/coach";
 import type { AiLevel, ClientState } from "../state/ClientState";
 import { el } from "./dom";
 import { EMBLEM_URL, GAME_NAME, GAME_TAGLINE } from "./brand";
 import { flavorOf } from "./flavor";
+import { renderMenuBackdrop } from "./menuBackdrop";
 
 // The main menu: where the app opens. The tutorial (first until it's been
 // finished once), play the computer (offline), play a person online, or
@@ -15,6 +16,7 @@ export interface MenuActions {
   startTutorial(): void;
   goOnline(): void;
   openHowToPlay(): void;
+  openShop(): void;
 }
 
 const LEVELS: Array<{ level: AiLevel; label: string; blurb: string }> = [
@@ -104,6 +106,11 @@ export function renderMenu(state: ClientState, rerender: () => void, actions: Me
             EDITIONS.map(({ edition, blurb }) => choice(flavorOf(edition).editionName, blurb, state.aiEdition === edition, pickEdition(edition))),
           ),
         ]),
+        el(
+          "button",
+          { className: "menu-big menu-big--quiet", onclick: () => actions.openShop() },
+          [el("span", {}, ["Field Guide"]), el("span", { className: "menu-big-blurb" }, ["Win offline duels to identify every kind of politician"])],
+        ),
         el("div", { className: "menu-actions" }, [
           el(
             "button",
@@ -128,27 +135,45 @@ export function renderMenu(state: ClientState, rerender: () => void, actions: Me
     { className: firstTime ? "primary menu-big" : "menu-big menu-big--quiet", onclick: () => actions.startTutorial() },
     firstTime ? [el("span", {}, ["Tutorial"]), el("span", { className: "menu-big-blurb" }, ["Your first duel, step by step"])] : ["Tutorial"],
   );
-  return el("div", { className: "menu" }, [
-    ...title,
-    el("div", { className: "menu-panel" }, [
-      firstTime ? tutorial : null,
-      el(
+  // Both real play modes wait on the tutorial: it's where the win/loss
+  // condition, stances and the election get taught, and a first duel
+  // without any of that lands a new player straight into a rules quiz.
+  const vsComputerButton = firstTime
+    ? el("button", { className: "menu-big", disabled: true }, [
+        el("span", {}, ["Play vs Computer"]),
+        el("span", { className: "menu-big-blurb" }, ["Finish the tutorial first"]),
+      ])
+    : el(
         "button",
         {
-          className: firstTime ? "menu-big" : "primary menu-big",
+          className: "primary menu-big",
           onclick: () => {
             state.menuStep = "vs-computer";
             rerender();
           },
         },
         ["Play vs Computer"],
-      ),
-      state.onlineAvailable
-        ? el("button", { className: "menu-big", onclick: () => actions.goOnline() }, ["Play Online"])
-        : el("button", { className: "menu-big", disabled: true }, [
-            el("span", {}, ["Play Online"]),
-            el("span", { className: "menu-big-blurb" }, ["Coming soon"]),
-          ]),
+      );
+
+  const playOnlineButton = !state.onlineAvailable
+    ? el("button", { className: "menu-big", disabled: true }, [
+        el("span", {}, ["Play Online"]),
+        el("span", { className: "menu-big-blurb" }, ["Coming soon"]),
+      ])
+    : firstTime
+      ? el("button", { className: "menu-big", disabled: true }, [
+          el("span", {}, ["Play Online"]),
+          el("span", { className: "menu-big-blurb" }, ["Finish the tutorial first"]),
+        ])
+      : el("button", { className: "menu-big", onclick: () => actions.goOnline() }, ["Play Online"]);
+
+  return el("div", { className: "menu menu--home" }, [
+    renderMenuBackdrop(),
+    ...title,
+    el("div", { className: "menu-panel" }, [
+      firstTime ? tutorial : null,
+      vsComputerButton,
+      playOnlineButton,
       el("div", { className: "menu-row" }, [
         firstTime ? null : tutorial,
         el("button", { className: "menu-big menu-big--quiet", onclick: () => actions.openHowToPlay() }, ["How to Play"]),

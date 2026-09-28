@@ -1,4 +1,4 @@
-import type { CardId } from "@project-palacio/duel-content";
+import type { CardId } from "@duel-for-the-world/duel-content";
 import type { FieldActor } from "../field/FieldActor";
 import type { FieldPolicy } from "../field/FieldPolicy";
 import type { FieldScandal } from "../field/FieldScandal";

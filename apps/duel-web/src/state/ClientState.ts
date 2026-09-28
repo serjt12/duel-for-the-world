@@ -1,6 +1,6 @@
-import type { ActorCardId, CardId, Edition, PolicyCardId } from "@project-palacio/duel-content";
-import type { ActorFacing, ActorStance } from "@project-palacio/duel-engine";
-import type { PlayerSlot, PublicDuelState } from "@project-palacio/duel-server";
+import type { ActorCardId, ActorRole, CardId, Edition, PolicyCardId } from "@duel-for-the-world/duel-content";
+import type { ActorFacing, ActorStance } from "@duel-for-the-world/duel-engine";
+import type { PlayerSlot, PublicDuelState } from "@duel-for-the-world/duel-server";
 import type { Headline } from "../ui/eventText";
 import type { EmbassyChoice } from "../ui/embassyPicker";
 
@@ -98,8 +98,22 @@ export interface ClientState {
   guide: { step: number; blocked: number } | null;
   // The Settings panel (sound, music, vibration) is open.
   settingsOpen: boolean;
+  // The Card Shop panel (offline card unlocks -- see state/progress.ts) is open.
+  shopOpen: boolean;
+  // The Card Shop's Field Guide: which "type" tab is picked (all, an
+  // ActorRole, or "policy"/"scandal"), and which entry is spotlighted.
+  // Falls back to the next unlock (or the first card) when unset or
+  // stale -- see renderShop.ts.
+  shopFilter: "all" | ActorRole | "policy" | "scandal";
+  shopSelected: CardId | null;
   // This build has an online server to play on.
   onlineAvailable: boolean;
+  // Waiting in the server's matchmaking queue for a quick-match opponent
+  // (see net/DuelClient.ts's quickMatch/onMatchFound). `quickMatchEdition`
+  // is which edition was requested, so a timeout or a dropped connection
+  // can fall back to an offline AI duel in the same edition.
+  quickMatchWaiting: boolean;
+  quickMatchEdition: Edition | null;
 }
 
 export function createInitialState(): ClientState {
@@ -127,6 +141,11 @@ export function createInitialState(): ClientState {
     embassyPick: null,
     guide: null,
     settingsOpen: false,
+    shopOpen: false,
+    shopFilter: "all",
+    shopSelected: null,
     onlineAvailable: true,
+    quickMatchWaiting: false,
+    quickMatchEdition: null,
   };
 }

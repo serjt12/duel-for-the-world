@@ -69,8 +69,9 @@ export type Passive =
   | { kind: "buff-others"; atk: number; def: number }
   // Extra votes on Election Night.
   | { kind: "votes-bonus"; amount: number }
-  // +amount ATK for each Actor card in its controller's Embassy.
-  | { kind: "atk-per-embassy-actor"; amount: number }
+  // +amount ATK for each Actor card in its controller's Embassy, up to
+  // +max total (uncapped if max is omitted).
+  | { kind: "atk-per-embassy-actor"; amount: number; max?: number }
   // Opposing card effects can't target it or send it to the Embassy.
   | { kind: "immune-to-effects" }
   // Can't be deployed in, or switched to, Resistance.

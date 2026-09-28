@@ -1,6 +1,6 @@
-import type { Edition } from "@project-palacio/duel-content";
-import { countVotes, equipsOf, getEffectiveStats, hasPassive } from "@project-palacio/duel-engine";
-import type { DuelistId, DuelState, FieldActor } from "@project-palacio/duel-engine";
+import type { Edition } from "@duel-for-the-world/duel-content";
+import { countVotes, equipsOf, getEffectiveStats, hasPassive } from "@duel-for-the-world/duel-engine";
+import type { DuelistId, DuelState, FieldActor } from "@duel-for-the-world/duel-engine";
 import type {
   PublicDuelistView,
   PublicDuelState,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { CardId } from "@project-palacio/duel-content";
-import type { DuelistState, FieldActor } from "@project-palacio/duel-engine";
+import type { CardId } from "@duel-for-the-world/duel-content";
+import type { DuelistState, FieldActor } from "@duel-for-the-world/duel-engine";
 import { redactStateFor } from "../../protocol/redact";
 import { DuelRoom } from "../../rooms/DuelRoom";
 import { AiPlayer } from "../AiPlayer";

@@ -1,5 +1,5 @@
-import { isScandalCardId } from "@project-palacio/duel-content";
-import type { ScandalCardId } from "@project-palacio/duel-content";
+import { isScandalCardId } from "@duel-for-the-world/duel-content";
+import type { ScandalCardId } from "@duel-for-the-world/duel-content";
 import type { DuelState } from "../duel/DuelState";
 import { logEvent } from "../events/log";
 import { pickBackroomZone } from "../field/backroom";

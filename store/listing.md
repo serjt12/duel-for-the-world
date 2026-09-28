@@ -51,9 +51,13 @@ to paste. The images are in this folder.
 
 **App icon**: `icon-512.png` (512 × 512).
 **Feature graphic**: `feature-graphic.png` (1024 × 500).
-**Phone screenshots**: 2 to 8 landscape screenshots from a real phone. Good picks:
-the main menu, a busy board, the tutorial tip box, a Scandal springing, and the
-Election Night newspaper. (Android: power + volume down.)
+**Phone screenshots**: 2 to 8 landscape screenshots, 16:9, ready to upload —
+already in this folder:
+- `screenshot-1-main-menu.jpg` -- the main menu
+- `screenshot-2-tutorial.jpg` -- the tutorial tip box
+- `screenshot-3-busy-board.jpg` -- a busy board mid-duel
+- `screenshot-4-scandal.jpg` -- a Scandal springing
+- `screenshot-5-election-night.jpg` -- the Election Night newspaper
 
 ## Store settings
 
@@ -61,8 +65,7 @@ Election Night newspaper. (Android: power + volume down.)
 - **Tags**: Card games, Strategy, Casual, Single player.
 - **Contact email**: required, shown publicly on the listing. You can use a separate
   address just for the game.
-- **Privacy policy URL**: the address where you host `privacy-policy.html`.
-  Replace `[DATE]` and `[CONTACT EMAIL]` in it first.
+- **Privacy policy URL**: https://serjt12.github.io/duel-for-the-world/
 
 ## App content (questionnaires)
 

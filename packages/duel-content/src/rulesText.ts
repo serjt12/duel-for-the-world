@@ -101,8 +101,10 @@ export function describePassive(passive: Passive, edition: Edition = "world"): s
       return `Your other Actors get ${describeStatModifier(passive)}.`;
     case "votes-bonus":
       return `+${plural(passive.amount, "vote")} on Election Night.`;
-    case "atk-per-embassy-actor":
-      return `+${passive.amount} ATK per Actor in ${EMBASSY_TEXT[edition].your}.`;
+    case "atk-per-embassy-actor": {
+      const capText = passive.max === undefined ? "" : ` (up to +${passive.max})`;
+      return `+${passive.amount} ATK per Actor in ${EMBASSY_TEXT[edition].your}${capText}.`;
+    }
     case "immune-to-effects":
       return "Immune to opposing effects.";
     case "campaign-only":

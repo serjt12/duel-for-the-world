@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { CardId } from "@project-palacio/duel-content";
-import { CARDS } from "@project-palacio/duel-content";
+import type { CardId } from "@duel-for-the-world/duel-content";
+import { CARDS } from "@duel-for-the-world/duel-content";
 import { buildDefaultDeck, DuelRoom } from "../DuelRoom";
+import { ELECTION_TURN } from "@duel-for-the-world/duel-engine";
 import type { PlayerAction } from "../../protocol/Messages";
 
 // A fixed deck for tests that need to know what's in the opening hand --
@@ -201,7 +202,7 @@ describe("DuelRoom", () => {
     expect(room.applyAction("duelist1", { type: "activate-set-policy", instanceId: set.instanceId })).toEqual({
       ok: true,
     });
-    expect(room.state.duelists.duelist1.mandate).toBe(25);
+    expect(room.state.duelists.duelist1.mandate).toBe(31); // 26 + 5
     expect(room.state.duelists.duelist1.backroomPolicies).toEqual([]);
   });
 
@@ -263,6 +264,45 @@ describe("DuelRoom", () => {
     expect(new Set(leaders).size).toBe(2);
   });
 
+  it("builds a deck restricted to a given card pool (the offline unlock system's own pool, e.g.)", () => {
+    // A tiny pool: 2 commons, 1 uncommon, 1 establishment, 1 policy, 1
+    // scandal, and just 1 Leader (so it's the only one that can be dealt).
+    const pool: CardId[] = [
+      "protester",
+      "bureaucrat",
+      "lobbyist",
+      "career-senator",
+      "eternal-incumbent",
+      "presidential-pardon",
+      "leaked-emails",
+    ];
+    const deck = buildDefaultDeck("world", () => 0.5, pool);
+    const count = (id: CardId) => deck.filter((card) => card === id).length;
+
+    expect(new Set(deck)).toEqual(new Set(pool));
+    expect([count("protester"), count("bureaucrat"), count("lobbyist"), count("career-senator")]).toEqual([2, 2, 1, 1]);
+    expect(count("eternal-incumbent")).toBe(1);
+    expect([count("presidential-pardon"), count("leaked-emails")]).toEqual([1, 1]);
+  });
+
+  it("a room given a cardPool deals only from it, but rematches keep re-rolling within it", () => {
+    const pool: CardId[] = [
+      "protester",
+      "bureaucrat",
+      "career-senator",
+      "eternal-incumbent",
+      "oil-baron",
+      "presidential-pardon",
+      "leaked-emails",
+    ];
+    const room = new DuelRoom(undefined, undefined, () => 0.5, "world", pool);
+    const dealt = [...room.state.duelists.duelist1.hand, ...room.state.duelists.duelist1.deck];
+    for (const id of dealt) expect(pool).toContain(id);
+    // Both Leaders are in the pool, so either can be dealt -- but never
+    // anything outside the pool (e.g. no other Leader, no other Policy).
+    expect(dealt.every((id) => pool.includes(id))).toBe(true);
+  });
+
   it("defaults a room to the World Edition", () => {
     const room = new DuelRoom();
     const d1 = room.state.duelists.duelist1;
@@ -319,6 +359,6 @@ describe("DuelRoom", () => {
     expect(room.rematchVotes()).toEqual([]);
     expect([room.state.winnerId, room.state.turnNumber, room.state.phase]).toEqual([null, 1, "agenda"]);
     expect(room.state.duelists.duelist1.hand).toEqual(KNOWN_DECK.slice(0, 5));
-    expect(room.state.election).toEqual({ turn: 12, runoff: false });
+    expect(room.state.election).toEqual({ turn: ELECTION_TURN, runoff: false });
   });
 });

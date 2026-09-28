@@ -1,6 +1,6 @@
-import { EMBASSY_TEXT } from "@project-palacio/duel-content";
-import type { Edition } from "@project-palacio/duel-content";
-import type { WinReason } from "@project-palacio/duel-engine";
+import { EMBASSY_TEXT } from "@duel-for-the-world/duel-content";
+import type { Edition } from "@duel-for-the-world/duel-content";
+import type { WinReason } from "@duel-for-the-world/duel-engine";
 
 // Everything the UI says that depends on the edition being played. The
 // World Edition is English-only; Edición Colombia keeps its Spanish

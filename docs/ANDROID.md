@@ -15,7 +15,7 @@ needs the game server hosted on the internet (wss://), which comes later.
    you ever need to recreate it, delete that folder and run:
 
    ```
-   pnpm --filter @project-palacio/duel-web android:add
+   pnpm --filter @duel-for-the-world/duel-web android:add
    ```
 
    This recreates the project, then locks the app to landscape, hides the

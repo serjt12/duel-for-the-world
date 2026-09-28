@@ -1,7 +1,7 @@
 # Fly.io deployment for the online-play game server (packages/duel-server).
 # See docs/SERVER.md for the full deploy walkthrough.
-app = "project-palacio"
-primary_region = "ams" # Amsterdam -- where Fly actually created the machines on first deploy; fine for a turn-based game
+app = "duel-for-the-world"
+primary_region = "iad" # Virginia -- closest Fly region to Colombia with no latency surprises for a turn-based game
 
 [build]
   dockerfile = "Dockerfile"

@@ -1,6 +1,5 @@
-import { randomUUID } from "node:crypto";
-import { CARDS, cardsOfEdition } from "@project-palacio/duel-content";
-import type { ActorCardId, CardId, Edition } from "@project-palacio/duel-content";
+import { CARDS, cardsOfEdition } from "@duel-for-the-world/duel-content";
+import type { ActorCardId, CardId, Edition } from "@duel-for-the-world/duel-content";
 import {
   activatePolicy,
   activateSetPolicy,
@@ -11,8 +10,8 @@ import {
   deployActor,
   setPolicy,
   setScandal,
-} from "@project-palacio/duel-engine";
-import type { DuelistId, DuelState } from "@project-palacio/duel-engine";
+} from "@duel-for-the-world/duel-engine";
+import type { DuelistId, DuelState } from "@duel-for-the-world/duel-engine";
 import type { PlayerAction } from "../protocol/Messages";
 import { shuffle } from "./shuffle";
 
@@ -33,8 +32,18 @@ export type ActionResult = { ok: true } | { ok: false; reason: string };
 export const GRASSROOTS_COPIES = 2;
 export const WORLD_LEADERS_PER_DECK = 2;
 
-export function buildDefaultDeck(edition: Edition, random: () => number = Math.random): CardId[] {
-  const pool = cardsOfEdition(edition);
+/**
+ * `pool` restricts which cards the deck is built from -- omitted, it's
+ * the whole edition (every online/server call site). Offline play alone
+ * passes a restricted pool, for the card-unlock system (see
+ * `@duel-for-the-world/duel-content`'s Unlocks.ts): a new player's deck
+ * comes only from their unlocked cards until they win more matches.
+ */
+export function buildDefaultDeck(
+  edition: Edition,
+  random: () => number = Math.random,
+  pool: CardId[] = cardsOfEdition(edition),
+): CardId[] {
   const deck: CardId[] = [];
   const leaders: ActorCardId[] = [];
 
@@ -103,12 +112,17 @@ export class DuelRoom {
     deck2?: CardId[],
     random: () => number = Math.random,
     edition: Edition = "world",
+    // Restricts default (unspecified) decks to this pool -- see
+    // buildDefaultDeck's `pool` param. Explicit deck1/deck2 ignore it
+    // entirely, same as always. Re-read on every rematch (the closure
+    // below), so a rematch still re-rolls leaders and shuffle order.
+    cardPool?: CardId[],
   ) {
     this.edition = edition;
     this.newDuel = () =>
       createDuel(
-        deck1 ? [...deck1] : shuffle(buildDefaultDeck(edition, random), random),
-        deck2 ? [...deck2] : shuffle(buildDefaultDeck(edition, random), random),
+        deck1 ? [...deck1] : shuffle(buildDefaultDeck(edition, random, cardPool), random),
+        deck2 ? [...deck2] : shuffle(buildDefaultDeck(edition, random, cardPool), random),
       );
     this.state = this.newDuel();
   }
@@ -146,7 +160,7 @@ export class DuelRoom {
     }
 
     if (slot) {
-      this.tokens[slot] = randomUUID();
+      this.tokens[slot] = crypto.randomUUID();
       this.connectedSlots[slot] = true;
     }
 

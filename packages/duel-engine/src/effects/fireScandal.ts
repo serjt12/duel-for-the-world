@@ -1,5 +1,5 @@
-import { SCANDAL_CARDS } from "@project-palacio/duel-content";
-import type { CardId, ScandalEvent } from "@project-palacio/duel-content";
+import { SCANDAL_CARDS } from "@duel-for-the-world/duel-content";
+import type { CardId, ScandalEvent } from "@duel-for-the-world/duel-content";
 import type { DuelistId } from "../duelists/DuelistId";
 import type { DuelState } from "../duel/DuelState";
 import { changeMandate, logEvent, otherDuelist } from "../events/log";

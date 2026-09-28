@@ -1,7 +1,7 @@
 // Heuristic-bot balance simulation: two simple bots play thousands of
 // duels straight against duel-engine (no server, no network).
 //
-//   pnpm --filter @project-palacio/duel-server balance [edition] [games] [seed] [mode]
+//   pnpm --filter @duel-for-the-world/duel-server balance [edition] [games] [seed] [mode]
 //
 // edition: world (default) | colombia. mode: "default" plays the normal
 // decks and reports first-player advantage, win reasons and Leader win
@@ -12,8 +12,8 @@
 //   { "protester": { "atk": 5 } }
 // The bots are deliberately simple (no bluffing, no reading of hidden
 // cards), so treat the output as a guide for outliers, not gospel.
-import { ACTOR_CARDS, CARDS, POLICY_CARDS, SCANDAL_CARDS, embassyChoiceIn } from "@project-palacio/duel-content";
-import type { ActorCardId, CardId, Edition, InstantEffect, PolicyCardId, ScandalCardId } from "@project-palacio/duel-content";
+import { ACTOR_CARDS, CARDS, POLICY_CARDS, SCANDAL_CARDS, embassyChoiceIn } from "@duel-for-the-world/duel-content";
+import type { ActorCardId, CardId, Edition, InstantEffect, PolicyCardId, ScandalCardId } from "@duel-for-the-world/duel-content";
 import {
   activatePolicy,
   advancePhase,
@@ -26,8 +26,8 @@ import {
   getEffectiveStats,
   hasPassive,
   setScandal,
-} from "@project-palacio/duel-engine";
-import type { DuelState, DuelistId, FieldActor } from "@project-palacio/duel-engine";
+} from "@duel-for-the-world/duel-engine";
+import type { DuelState, DuelistId, FieldActor } from "@duel-for-the-world/duel-engine";
 import { buildDefaultDeck } from "../src/rooms/DuelRoom";
 
 import { readFileSync } from "node:fs";

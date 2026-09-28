@@ -1,5 +1,7 @@
-import type { PlayerAction } from "@project-palacio/duel-server";
-import { PROTOCOL_VERSION } from "@project-palacio/duel-server/protocol-version";
+import { unlockedCardsOfEdition } from "@duel-for-the-world/duel-content";
+import type { Edition } from "@duel-for-the-world/duel-content";
+import type { PlayerAction } from "@duel-for-the-world/duel-server";
+import { PROTOCOL_VERSION } from "@duel-for-the-world/duel-server/protocol-version";
 import { installSound, playBlocked, playDuelEvents } from "./audio/sound";
 import { advanceGuide, applyCoachHighlights, guideAllows, mountCoach, renderCoach } from "./guide/coach";
 import { ScriptedSeat } from "./guide/ScriptedSeat";
@@ -10,6 +12,7 @@ import { LocalDuel } from "./net/LocalDuel";
 import type { LocalDuelHandlers, LocalDuelSetup } from "./net/LocalDuel";
 import { createInitialState } from "./state/ClientState";
 import type { AiLevel, ClientState } from "./state/ClientState";
+import { progress } from "./state/progress";
 import { applyServerState, resetDuelView } from "./ui/applyState";
 import { refreshDragHighlights } from "./ui/dragDrop";
 import { renderEmbassyViewer } from "./ui/embassy";
@@ -23,6 +26,7 @@ import type { AppActions } from "./ui/renderApp";
 import { loadTutorialOpenPreference, renderTutorialPanel } from "./ui/renderTutorial";
 import { installCardInspector } from "./ui/inspect";
 import { renderSettings } from "./ui/settingsPanel";
+import { renderShop } from "./ui/renderShop";
 import { electionLine, showTurnBanner } from "./ui/turnBanner";
 import { installStageResize, isPhoneLayout } from "./ui/stage";
 
@@ -32,6 +36,7 @@ import { installStageResize, isPhoneLayout } from "./ui/stage";
 const DEFAULT_SERVER_URL = "ws://localhost:8080";
 
 const LEVEL_NAMES = { easy: "Easy", normal: "Normal", hard: "Hard" } as const;
+const QUICK_MATCH_TIMEOUT_MS = 7000;
 
 // `serverUrl` null: no online server for this build (Play Online shows "coming soon").
 export function startApp(appRoot: HTMLElement, serverUrl: string | null = DEFAULT_SERVER_URL): { state: ClientState } {
@@ -42,6 +47,21 @@ export function startApp(appRoot: HTMLElement, serverUrl: string | null = DEFAUL
 
   let online: DuelClient | null = null;
   let local: LocalDuel | null = null;
+  let quickMatchTimer: number | null = null;
+  // Guards against a rapid double-tap (e.g. two Advance Phase clicks
+  // before the first one's answer comes back) sending a second action
+  // while the first is still in flight. LocalDuel/DuelClient both apply
+  // an action and report back asynchronously (LocalDuel deliberately, "like
+  // the network would") -- without this, two taps close enough together
+  // could both reach the engine before either render, letting the second
+  // one silently skip past a phase the UI (and, during the tutorial, the
+  // guide script) never got a chance to react to.
+  let actionInFlight = false;
+
+  function clearQuickMatchTimer(): void {
+    if (quickMatchTimer) window.clearTimeout(quickMatchTimer);
+    quickMatchTimer = null;
+  }
 
   // Renderers talk to whichever side is active right now.
   const client: GameClient = {
@@ -57,11 +77,18 @@ export function startApp(appRoot: HTMLElement, serverUrl: string | null = DEFAUL
         // Keep to the script: anything else is sent back with a nudge.
         if (!guideAllows(state, action)) {
           playBlocked();
-          state.interaction = { mode: "idle" };
+          // Unlike a real rejection from the engine (below), nothing was ever
+          // sent -- this is the guide saying "not that one yet." Whatever menu
+          // the player had open (e.g. the Riot Cop's hand-menu) is still valid
+          // UI state, so leave it open: closing it would hide the very button
+          // the coach is telling them to click next, which read as the game
+          // being "blocked" (see the tutorial bug report).
           rerender();
           return;
         }
       }
+      if (action.type !== "rematch" && actionInFlight) return;
+      if (action.type !== "rematch") actionInFlight = true;
       if (state.mode === "offline") local?.sendAction(action);
       else online?.sendAction(action);
     },
@@ -77,6 +104,10 @@ export function startApp(appRoot: HTMLElement, serverUrl: string | null = DEFAUL
     },
     playForReal: () => actions.startVsComputer("easy"),
     toMenu: () => actions.backToMenu(),
+    // The escape hatch when a step won't budge (see coach.ts): rather
+    // than try to patch up a script + duel that have drifted apart,
+    // just deal a fresh scripted duel from the top.
+    restart: () => actions.startTutorial(),
   };
 
   function rerender(): void {
@@ -90,6 +121,7 @@ export function startApp(appRoot: HTMLElement, serverUrl: string | null = DEFAUL
         renderEmbassyViewer(state, rerender),
         renderEmbassyPicker(state, rerender),
         renderSettings(state, rerender),
+        renderShop(state, rerender),
       ].filter((node): node is HTMLElement => node !== null),
     );
     mountCoach(appRoot, renderCoach(state, coachActions));
@@ -101,6 +133,7 @@ export function startApp(appRoot: HTMLElement, serverUrl: string | null = DEFAUL
   }
 
   function onState(duel: Parameters<typeof applyServerState>[1]): void {
+    actionInFlight = false;
     // Captures cards about to leave the field while the old board is
     // still on screen; the returned function plays their effects.
     // What's new since the last update (nothing on the first one).
@@ -140,23 +173,40 @@ export function startApp(appRoot: HTMLElement, serverUrl: string | null = DEFAUL
     state.statusLine =
       `The game server is running a different version (server: ${String(serverProtocolVersion ?? "old")}, ` +
       `this app: ${PROTOCOL_VERSION}). Restart the server -- stop it with Ctrl+C and run ` +
-      "\"pnpm duel\" (or \"pnpm --filter @project-palacio/duel-server dev\") -- then reload.";
+      "\"pnpm duel\" (or \"pnpm --filter @duel-for-the-world/duel-server dev\") -- then reload.";
     rerender();
     return false;
   }
 
   function leaveCurrent(): void {
+    actionInFlight = false;
     local?.stop();
     local = null;
     online?.disconnect();
     online = null;
+    clearQuickMatchTimer();
     state.connectionOpen = false;
     state.roomCode = null;
     state.you = null;
     state.statusLine = null;
     state.aiThinking = false;
     state.guide = null;
+    state.quickMatchWaiting = false;
+    state.quickMatchEdition = null;
     resetDuelView(state);
+  }
+
+  // Quick match gave up (the timeout fired, or the connection dropped
+  // while waiting): drop into an offline AI duel in the same edition the
+  // player asked for, rather than leaving them stuck on the lobby screen.
+  function fallbackToAi(edition: Edition): void {
+    leaveCurrent();
+    startLocal(
+      { edition, level: state.aiLevel, cardPool: unlockedCardsOfEdition(edition, progress().offlineWins) },
+      `Computer · ${LEVEL_NAMES[state.aiLevel]}`,
+    );
+    state.statusLine = "No one was online -- you're playing the computer instead.";
+    rerender();
   }
 
   // A duel against the computer, on this device.
@@ -171,6 +221,7 @@ export function startApp(appRoot: HTMLElement, serverUrl: string | null = DEFAUL
       },
       onState,
       onActionRejected: (reason) => {
+        actionInFlight = false;
         playBlocked();
         state.interaction = { mode: "idle" };
         state.statusLine = `Not allowed: ${reason}`;
@@ -191,7 +242,11 @@ export function startApp(appRoot: HTMLElement, serverUrl: string | null = DEFAUL
     startVsComputer(level?: AiLevel): void {
       leaveCurrent();
       const chosen = level ?? state.aiLevel;
-      startLocal({ edition: level ? "world" : state.aiEdition, level: chosen }, `Computer · ${LEVEL_NAMES[chosen]}`);
+      const edition = level ? "world" : state.aiEdition;
+      startLocal(
+        { edition, level: chosen, cardPool: unlockedCardsOfEdition(edition, progress().offlineWins) },
+        `Computer · ${LEVEL_NAMES[chosen]}`,
+      );
     },
 
     // The guided first duel: stacked decks, a scripted opponent, an early election.
@@ -251,6 +306,31 @@ export function startApp(appRoot: HTMLElement, serverUrl: string | null = DEFAUL
           state.statusLine = "Back in the duel.";
           rerender();
         },
+        onQuickMatchWaiting: () => {
+          state.statusLine = "Looking for an opponent -- this may take a few seconds.";
+          rerender();
+        },
+        onMatchFound: (roomCode, you, serverProtocolVersion) => {
+          // A match can in principle still arrive just after the client
+          // gave up and fell back to an offline duel (a race between the
+          // timeout firing and cancel-quick-match reaching the server) --
+          // ignore it rather than stomping on a duel already in progress.
+          if (!state.quickMatchWaiting) return;
+          clearQuickMatchTimer();
+          // Cleared unconditionally from here on: whether this match is
+          // accepted or rejected below (a version mismatch), the search
+          // is over either way -- otherwise the lobby would be stuck
+          // showing "Looking for an opponent..." with nothing left that
+          // could ever clear it.
+          state.quickMatchWaiting = false;
+          state.quickMatchEdition = null;
+          if (!serverMatches(serverProtocolVersion)) return;
+          state.roomCode = roomCode;
+          state.you = you;
+          state.screen = "board";
+          state.statusLine = "Opponent found -- the duel begins.";
+          rerender();
+        },
         onOpponentJoined: () => {
           state.statusLine = "Opponent joined -- the duel begins.";
           rerender();
@@ -269,6 +349,7 @@ export function startApp(appRoot: HTMLElement, serverUrl: string | null = DEFAUL
         },
         onState,
         onActionRejected: (reason) => {
+          actionInFlight = false;
           playBlocked();
           // Drop any half-finished play (e.g. a card waiting in a zone for the
           // server's answer) so the card goes back to the hand.
@@ -281,7 +362,16 @@ export function startApp(appRoot: HTMLElement, serverUrl: string | null = DEFAUL
           rerender();
         },
         onDisconnected: () => {
+          actionInFlight = false;
           state.connectionOpen = false;
+          // Waiting for a quick match when the connection drops: there's
+          // nothing to reconnect to yet (no roomCode), so fall back to
+          // the computer immediately rather than sit on a dead lobby.
+          if (state.quickMatchWaiting) {
+            clearQuickMatchTimer();
+            fallbackToAi(state.quickMatchEdition ?? "world");
+            return;
+          }
           // A dropped connection mid-match tries a few reconnects on its
           // own (see DuelClient) before this counts as "gone for good" --
           // onReconnectFailed is what says the latter.
@@ -299,9 +389,40 @@ export function startApp(appRoot: HTMLElement, serverUrl: string | null = DEFAUL
       rerender();
     },
 
+    startQuickMatch(edition: Edition): void {
+      if (!online || !state.connectionOpen || state.quickMatchWaiting) return;
+      state.quickMatchWaiting = true;
+      state.quickMatchEdition = edition;
+      state.statusLine = null;
+      rerender();
+      online.quickMatch(edition);
+      clearQuickMatchTimer();
+      quickMatchTimer = window.setTimeout(() => {
+        quickMatchTimer = null;
+        if (!state.quickMatchWaiting) return; // matched (or left) in the meantime
+        online?.cancelQuickMatch();
+        fallbackToAi(edition);
+      }, QUICK_MATCH_TIMEOUT_MS);
+    },
+
+    cancelQuickMatch(): void {
+      if (!state.quickMatchWaiting) return;
+      clearQuickMatchTimer();
+      online?.cancelQuickMatch();
+      state.quickMatchWaiting = false;
+      state.quickMatchEdition = null;
+      state.statusLine = null;
+      rerender();
+    },
+
     openHowToPlay(): void {
       state.tutorialOpen = true;
       state.logOpen = false;
+      rerender();
+    },
+
+    openShop(): void {
+      state.shopOpen = true;
       rerender();
     },
 

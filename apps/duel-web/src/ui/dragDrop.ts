@@ -1,4 +1,4 @@
-import type { CardId } from "@project-palacio/duel-content";
+import type { CardId } from "@duel-for-the-world/duel-content";
 
 // Pointer-based card dragging (mouse, pen, and touch), with a floating
 // "ghost" card that lifts, tilts with movement, glows over a valid

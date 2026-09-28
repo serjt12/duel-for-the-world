@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { DuelistState } from "@project-palacio/duel-engine";
-import type { DuelPhase, DuelState, FieldActor, FieldPolicy } from "@project-palacio/duel-engine";
+import type { DuelistState } from "@duel-for-the-world/duel-engine";
+import type { DuelPhase, DuelState, FieldActor, FieldPolicy } from "@duel-for-the-world/duel-engine";
 import { LOG_EVENTS_SENT, redactStateFor } from "../redact";
 
 function createDuelist(overrides: Partial<DuelistState> = {}): DuelistState {

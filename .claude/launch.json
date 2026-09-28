@@ -2,9 +2,9 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "project-palacio-web",
+      "name": "duel-for-the-world-web",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@project-palacio/web", "dev"],
+      "runtimeArgs": ["--filter", "@duel-for-the-world/duel-web", "dev"],
       "port": 5173
     }
   ]

@@ -187,7 +187,13 @@ export const WORLD_ACTOR_CARDS: Record<WorldActorCardId, ActorCardDefinition> = 
     name: "The Comeback Kid",
     role: "militant",
     tier: "establishment",
-    atk: 5,
+    // Was 5/3: balance-sim showed a 67.1% win rate when played (n=2305),
+    // ~17pp above political-comeback -- the same recall effect on a Policy
+    // card with no body -- so the body itself was the overtuned part.
+    // Tried 3/3 first: win rate normalized (52.8%) but it almost stopped
+    // getting played at all (n=163) -- not worth a tribute anymore, for
+    // the AI or a rational human. Settled on 4/3, between the two.
+    atk: 4,
     def: 3,
     onDeploy: [{ kind: "retrieve-from-embassy", from: "yours", filter: { category: "actor", maxAtk: 4 }, to: "field" }],
     flavorText: "Resigned in disgrace. Returned in triumph. Scheduled to repeat.",
@@ -275,7 +281,14 @@ export const WORLD_ACTOR_CARDS: Record<WorldActorCardId, ActorCardDefinition> = 
     tier: "leader",
     atk: 3,
     def: 5,
-    passives: [{ kind: "atk-per-embassy-actor", amount: 1 }],
+    // Capped at +2 (5 ATK total, level with the other Leaders' flat 5):
+    // playtesting found this scaled unbounded in longer matches (see
+    // DuelConfig.ts's ELECTION_TURN/STARTING_MANDATE notes) since both
+    // duelists' Embassies keep growing all game. A +4 cap was tried first
+    // but barely moved its win rate (66.6% -> 65.4%, n~765, within noise)
+    // -- by the time this card matters, 4+ Actors are already archived in
+    // most games, so that cap wasn't actually constraining anything.
+    passives: [{ kind: "atk-per-embassy-actor", amount: 1, max: 2 }],
     flavorText: "Governs from a hotel lobby. Very popular in the hotel.",
   }),
 };
@@ -331,7 +344,20 @@ export const WORLD_POLICY_CARDS: Record<WorldPolicyCardId, PolicyCardDefinition>
     name: "Lobbying Deal",
     kind: "equip",
     attachTo: "your-actor",
-    whileEquipped: { atk: 1, def: 1 },
+    // Was +1/+1: this has been the game's single biggest outlier since
+    // round 8 (originally flagged at about +7 points), and stayed the
+    // strongest card in the pool across three balance-sim runs this
+    // session (~60% win-rate-when-played, n>3000 each time) even though
+    // Attack Ad below is the exact same cost/magnitude in reverse
+    // (-1/-1 on an opponent's Actor) and sits close to baseline (~54%).
+    // Buffing your own committed Actor compounds every turn it's up --
+    // more combat swings AND more votes on Election Night for the rest
+    // of the duel -- while a debuff on one opposing Actor is easy to
+    // play around (bench it, don't attack with it). Trimmed the DEF
+    // half of the free ride rather than the ATK, to keep this the
+    // aggressive-equip counterpart to Attack Ad rather than blunting it
+    // into a generic stat stick.
+    whileEquipped: { atk: 1, def: 0 },
     flavorText: "Nothing illegal. Nothing written down, either.",
   }),
   "attack-ad": policy({

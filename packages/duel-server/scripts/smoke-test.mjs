@@ -1,8 +1,8 @@
 // Manual smoke test for the duel-server WebSocket layer.
 //
 // Usage:
-//   Terminal 1: pnpm --filter @project-palacio/duel-server start
-//   Terminal 2: pnpm --filter @project-palacio/duel-server smoke-test
+//   Terminal 1: pnpm --filter @duel-for-the-world/duel-server start
+//   Terminal 2: pnpm --filter @duel-for-the-world/duel-server smoke-test
 //
 // Connects two WebSocket clients (standing in for two players), plays
 // through room creation/joining and a handful of real actions, and checks
@@ -311,7 +311,7 @@ main().catch((err) => {
   console.error("\nSmoke test crashed:", err.message);
   console.error(
     "Is the server actually running? Start it in another terminal first:\n" +
-      "  pnpm --filter @project-palacio/duel-server start",
+      "  pnpm --filter @duel-for-the-world/duel-server start",
   );
   process.exit(1);
 });

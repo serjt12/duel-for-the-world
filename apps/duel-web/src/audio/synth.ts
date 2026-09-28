@@ -189,21 +189,23 @@ export const ALL_SFX: SfxName[] = [
 
 // --- Music -------------------------------------------------------------------
 //
-// A quiet, looping "late-night newsroom" bed in D minor: a soft pad, a
-// bass on beats 1 and 3, and a sparse arpeggio. Two bars per chord,
-// Dm - Bb - F - C, 84 bpm (a 23-second loop).
+// A bright, bouncy "campaign rally" bed in C major: a punchy chord stab on
+// every bar, an oom-pah bass alternating root and fifth, and a bubbly
+// arpeggio skipping through the chord. Two bars per chord, C - G - Am - F,
+// 132 bpm (a ~14.5-second loop).
 
-const BPM = 84;
+const BPM = 132;
 const EIGHTH = 60 / BPM / 2;
 const CHORDS = [
-  [50, 53, 57],
-  [46, 50, 53],
-  [53, 57, 60],
-  [48, 52, 55],
+  [48, 52, 55], // C major
+  [43, 47, 50], // G major
+  [45, 48, 52], // A minor
+  [41, 45, 48], // F major
 ];
 const STEPS_PER_CHORD = 16; // two bars of eighths
-// Which chord tone the arpeggio plays on each eighth (-1: rest).
-const ARP = [0, -1, 1, 2, -1, 1, 0, -1, 2, -1, 1, -1, 0, 2, -1, 1];
+// Which chord tone (0/1/2) or the root an octave up (3) the arpeggio plays
+// on each eighth (-1: rest).
+const ARP = [0, 1, 2, 3, 2, 1, 0, 1, 2, 3, 2, 1, 0, 2, 1, 3];
 
 /** Schedules music step `step` (an eighth note) at time `t`. */
 export function playMusicStep(ctx: BaseAudioContext, out: AudioNode, step: number, t: number): void {
@@ -211,22 +213,27 @@ export function playMusicStep(ctx: BaseAudioContext, out: AudioNode, step: numbe
   const chord = CHORDS[chordIndex];
   const inChord = step % STEPS_PER_CHORD;
 
+  // A short, bright stab on the chord change -- an accent, not a wash.
   if (inChord === 0) {
-    const length = STEPS_PER_CHORD * EIGHTH;
-    for (const note of chord) {
-      for (const detune of [-7, 7]) {
-        tone(ctx, out, midi(note), t, length + 0.8, { type: "sawtooth", gain: 0.018, attack: 0.9, filter: 650, detune });
+    for (const detune of [-6, 6]) {
+      for (const note of chord) {
+        tone(ctx, out, midi(note + 12), t, EIGHTH * 3, { type: "sawtooth", gain: 0.045, attack: 0.01, filter: 1800, detune });
       }
     }
   }
-  if (inChord % 4 === 0) {
-    tone(ctx, out, midi(chord[0] - 12), t, EIGHTH * 3, { gain: 0.13, attack: 0.02, filter: 400 });
+  // A bouncy oom-pah bass: root on the downbeat, the fifth on the upbeat,
+  // every quarter note.
+  if (inChord % 2 === 0) {
+    const onUpbeat = Math.floor(inChord / 2) % 2 === 1;
+    const bassNote = (onUpbeat ? chord[2] : chord[0]) - 12;
+    tone(ctx, out, midi(bassNote), t, EIGHTH * 1.7, { type: "triangle", gain: 0.17, attack: 0.008, filter: 550 });
   }
+  // A bubbly arpeggio skipping up and down through the chord, an octave
+  // above the stab -- the part that actually makes it feel "fun."
   const arp = ARP[inChord];
-  // Every other pass through the loop the arpeggio rests, for breathing room.
-  const pass = Math.floor(step / (STEPS_PER_CHORD * CHORDS.length));
-  if (arp >= 0 && (pass % 2 === 0 || inChord < 8)) {
-    tone(ctx, out, midi(chord[arp] + 24), t, 0.45, { type: "triangle", gain: 0.035, attack: 0.008, filter: 2200 });
+  if (arp >= 0) {
+    const note = (arp === 3 ? chord[0] + 12 : chord[arp]) + 24;
+    tone(ctx, out, midi(note), t, 0.22, { type: "square", gain: 0.028, attack: 0.004, filter: 3000 });
   }
 }
 
