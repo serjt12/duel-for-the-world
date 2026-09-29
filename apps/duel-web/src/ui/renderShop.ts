@@ -7,8 +7,10 @@ import {
   unlockedCardsOfEdition,
 } from "@duel-for-the-world/duel-content";
 import type { ActorRole, CardId } from "@duel-for-the-world/duel-content";
+import { rewardedAdAvailable, showRewardedAd } from "../ads/ads";
 import type { ClientState } from "../state/ClientState";
-import { progress } from "../state/progress";
+import { addDonation, canAffordUnlock, donations, spendOnUnlock, UNLOCK_COST } from "../state/donations";
+import { effectiveOfflineWins, grantBonusUnlockWin } from "../state/progress";
 import { CARD_ART } from "./cardArt";
 import { renderCardFace } from "./cardView";
 import { el } from "./dom";
@@ -111,16 +113,22 @@ function renderSpotlight(cardId: CardId, dexNumber: number, unlocked: boolean, t
   return el("div", { className: "dex-spotlight" }, [face, el("div", { className: "dex-spotlight-info" }, infoLines)]);
 }
 
+// Whether a rewarded ad is currently playing -- module-level rather than
+// ClientState since it's purely a local "don't double-tap" UI guard, not
+// state anything else needs to read.
+let watchingAd = false;
+
 export function renderShop(state: ClientState, rerender: () => void): HTMLElement | null {
   if (!state.shopOpen) return null;
   const close = () => {
     state.shopOpen = false;
+    watchingAd = false;
     rerender();
   };
 
   const edition = state.aiEdition;
   const editionName = flavorOf(edition).editionName;
-  const wins = progress().offlineWins;
+  const wins = effectiveOfflineWins();
   const all = cardsOfEdition(edition);
   const unlocked = new Set(unlockedCardsOfEdition(edition, wins));
   const order = unlockOrderOfEdition(edition);
@@ -162,6 +170,43 @@ export function renderShop(state: ClientState, rerender: () => void): HTMLElemen
             `⭐ Next up, in ${upcoming.winsRequired - wins} more offline win${upcoming.winsRequired - wins === 1 ? "" : "s"} (${wins} so far).`,
           ])
         : el("p", { className: "shop-next-line shop-next-line--done" }, ["\u{1F3C6} Every politician in this edition is identified!"]),
+    );
+  }
+
+  // Donations: watch a rewarded ad for one, spend UNLOCK_COST of them to
+  // unlock whichever card is next early, instead of grinding more wins.
+  if (gated && upcoming) {
+    const balance = donations().balance;
+    const adReady = rewardedAdAvailable();
+    const watchAd = async () => {
+      if (watchingAd || !adReady) return;
+      watchingAd = true;
+      rerender();
+      const result = await showRewardedAd();
+      watchingAd = false;
+      if (result.rewarded) addDonation();
+      rerender();
+    };
+    const buyUnlock = () => {
+      if (!spendOnUnlock()) return;
+      grantBonusUnlockWin();
+      rerender();
+    };
+    header.push(
+      el("div", { className: "dex-donations" }, [
+        el("span", { className: "dex-donations-balance" }, [`\u{1F4B0} ${balance} Donation${balance === 1 ? "" : "s"}`]),
+        el(
+          "button",
+          { type: "button", className: "dex-donations-btn", disabled: watchingAd || !adReady, onclick: () => void watchAd() },
+          [watchingAd ? "Watching..." : "\u{1F4FA} Watch ad: +1 Donation"],
+        ),
+        el(
+          "button",
+          { type: "button", className: "dex-donations-btn primary", disabled: !canAffordUnlock(), onclick: buyUnlock },
+          [`Unlock now (${UNLOCK_COST})`],
+        ),
+      ]),
+      adReady ? null : el("p", { className: "dex-donations-note" }, ["Ads only work in the installed Android app."]),
     );
   }
 

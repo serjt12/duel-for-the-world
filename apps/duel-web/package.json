@@ -27,6 +27,8 @@
     "@duel-for-the-world/duel-content": "workspace:*",
     "@duel-for-the-world/duel-engine": "workspace:*",
     "@duel-for-the-world/duel-server": "workspace:*",
-    "@capacitor/core": "^8.0.0"
+    "@capacitor-community/admob": "^8.1.0",
+    "@capacitor/core": "^8.0.0",
+    "@revenuecat/purchases-capacitor": "^13.6.1"
   }
 }

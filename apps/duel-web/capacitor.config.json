@@ -4,5 +4,6 @@
   "webDir": "dist",
   "android": {
     "backgroundColor": "#14161c"
-  }
+  },
+  "admobAppId": "ca-app-pub-3940256099942544~3347511713"
 }

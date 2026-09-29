@@ -212,3 +212,18 @@ update(join(androidDir, ".gitignore"), ".gitignore (signing key)", (text) =>
     ? text
     : `${text.trimEnd()}\n\n# Release signing: the key and its passwords never go into git.\nkeystore.properties\n*.jks\n*.keystore\n`,
 );
+
+// --- 7. AdMob app id -----------------------------------------------------------
+// Not a secret (it's baked into the APK either way) -- defaults to Google's
+// public test app id in capacitor.config.json, so a fresh checkout always
+// builds without ever making a real ad request. Swap that value for the
+// real one from the AdMob dashboard before a release build that should
+// actually serve ads. See docs/ADS.md.
+update(manifestPath, `AndroidManifest.xml (AdMob app id ${config.admobAppId ?? "(none set)"})`, (text) => {
+  if (!config.admobAppId) return text;
+  const tag = `<meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="${config.admobAppId}"/>`;
+  if (text.includes("com.google.android.gms.ads.APPLICATION_ID")) {
+    return text.replace(/<meta-data android:name="com\.google\.android\.gms\.ads\.APPLICATION_ID"[^/]*\/>/, tag);
+  }
+  return text.replace(/(\s*)<\/application>/, `\n        ${tag}$1</application>`);
+});

@@ -2,7 +2,8 @@ import { unlockedCardsOfEdition } from "@duel-for-the-world/duel-content";
 import type { Edition } from "@duel-for-the-world/duel-content";
 import type { PlayerAction } from "@duel-for-the-world/duel-server";
 import { PROTOCOL_VERSION } from "@duel-for-the-world/duel-server/protocol-version";
-import { installSound, playBlocked, playDuelEvents } from "./audio/sound";
+import { initAds, maybeShowInterstitialAfterMatch } from "./ads/ads";
+import { installSound, playBlocked, playDuelEvents, setMusicTheme } from "./audio/sound";
 import { advanceGuide, applyCoachHighlights, guideAllows, mountCoach, renderCoach } from "./guide/coach";
 import { ScriptedSeat } from "./guide/ScriptedSeat";
 import { GUIDE_DECKS, GUIDE_ELECTION_TURN, GUIDE_OPPONENT_SCRIPT, GUIDE_YOU } from "./guide/script";
@@ -12,7 +13,8 @@ import { LocalDuel } from "./net/LocalDuel";
 import type { LocalDuelHandlers, LocalDuelSetup } from "./net/LocalDuel";
 import { createInitialState } from "./state/ClientState";
 import type { AiLevel, ClientState } from "./state/ClientState";
-import { progress } from "./state/progress";
+import { effectiveOfflineWins } from "./state/progress";
+import { initPurchases } from "./store/purchases";
 import { applyServerState, resetDuelView } from "./ui/applyState";
 import { refreshDragHighlights } from "./ui/dragDrop";
 import { renderEmbassyViewer } from "./ui/embassy";
@@ -27,6 +29,7 @@ import { loadTutorialOpenPreference, renderTutorialPanel } from "./ui/renderTuto
 import { installCardInspector } from "./ui/inspect";
 import { renderSettings } from "./ui/settingsPanel";
 import { renderShop } from "./ui/renderShop";
+import { renderStore } from "./ui/renderStore";
 import { electionLine, showTurnBanner } from "./ui/turnBanner";
 import { installStageResize, isPhoneLayout } from "./ui/stage";
 
@@ -113,6 +116,10 @@ export function startApp(appRoot: HTMLElement, serverUrl: string | null = DEFAUL
   function rerender(): void {
     const currentPhase = state.duel?.phase ?? null;
     document.body.classList.toggle("phone-layout", isPhoneLayout() && state.screen === "board");
+    // The tenser "showdown" bed once a duel is actually on screen, the
+    // bright "campaign rally" bed everywhere else (menu, lobby) -- a
+    // no-op unless the screen actually changed since the last render.
+    setMusicTheme(state.screen === "board" ? "duel" : "menu");
     appRoot.replaceChildren(
       ...[
         renderApp(state, client, rerender, actions),
@@ -121,6 +128,7 @@ export function startApp(appRoot: HTMLElement, serverUrl: string | null = DEFAUL
         renderEmbassyViewer(state, rerender),
         renderEmbassyPicker(state, rerender),
         renderSettings(state, rerender),
+        renderStore(state, rerender),
         renderShop(state, rerender),
       ].filter((node): node is HTMLElement => node !== null),
     );
@@ -202,7 +210,7 @@ export function startApp(appRoot: HTMLElement, serverUrl: string | null = DEFAUL
   function fallbackToAi(edition: Edition): void {
     leaveCurrent();
     startLocal(
-      { edition, level: state.aiLevel, cardPool: unlockedCardsOfEdition(edition, progress().offlineWins) },
+      { edition, level: state.aiLevel, cardPool: unlockedCardsOfEdition(edition, effectiveOfflineWins()) },
       `Computer · ${LEVEL_NAMES[state.aiLevel]}`,
     );
     state.statusLine = "No one was online -- you're playing the computer instead.";
@@ -244,7 +252,7 @@ export function startApp(appRoot: HTMLElement, serverUrl: string | null = DEFAUL
       const chosen = level ?? state.aiLevel;
       const edition = level ? "world" : state.aiEdition;
       startLocal(
-        { edition, level: chosen, cardPool: unlockedCardsOfEdition(edition, progress().offlineWins) },
+        { edition, level: chosen, cardPool: unlockedCardsOfEdition(edition, effectiveOfflineWins()) },
         `Computer · ${LEVEL_NAMES[chosen]}`,
       );
     },
@@ -426,15 +434,26 @@ export function startApp(appRoot: HTMLElement, serverUrl: string | null = DEFAUL
       rerender();
     },
 
+    openStore(): void {
+      state.storeOpen = true;
+      rerender();
+    },
+
     backToMenu(): void {
+      // Only count/advertise after a real duel actually finished -- not the
+      // tutorial, and not backing out of a lobby or an in-progress match.
+      const matchFinished = state.guide === null && state.duel !== null && state.duel.winnerId !== null;
       leaveCurrent();
       state.screen = "menu";
       state.menuStep = "main";
       rerender();
+      if (matchFinished) void maybeShowInterstitialAfterMatch();
     },
   };
 
   installSound();
+  void initPurchases().then(rerender);
+  void initAds();
   installEscapeToCancel(state, rerender);
   installStageResize(() => rerender());
   installCardInspector();

@@ -219,6 +219,15 @@ h1 {
   background: #2c2a22;
 }
 
+.menu-choice--locked {
+  opacity: 0.7;
+}
+
+.menu-choice-lock {
+  margin-left: 2px;
+  font-size: 0.85em;
+}
+
 .menu-actions {
   display: flex;
   justify-content: space-between;
@@ -2657,6 +2666,36 @@ body.phone-layout .log-panel {
   color: var(--accent-green);
 }
 
+.dex-donations {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.dex-donations-balance {
+  font-weight: 600;
+  color: var(--accent-gold);
+  margin-right: auto;
+}
+
+.dex-donations-btn {
+  flex: none;
+  padding: 6px 12px;
+  font-size: 0.85em;
+}
+
+.dex-donations-note {
+  margin: 0;
+  width: 100%;
+  color: var(--text-dim);
+  font-size: 0.8em;
+  font-style: italic;
+}
+
 /* The spotlight: the selected Dex entry, large. */
 
 .dex-spotlight {
@@ -3000,6 +3039,71 @@ body.phone-layout .log-panel {
   color: var(--text-dim);
   font-size: 0.9em;
   font-style: italic;
+}
+
+/* --- Store (ui/renderStore.ts) ---------------------------------------------- */
+
+.store-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 56px;
+  padding: 10px 12px;
+  text-align: left;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.store-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.store-item-title {
+  font-weight: bold;
+}
+
+.store-item-blurb {
+  color: var(--text-dim);
+  font-size: 0.82em;
+}
+
+.store-item-button {
+  flex: none;
+  min-width: 88px;
+}
+
+.store-owned-badge {
+  flex: none;
+  color: var(--accent-green);
+  font-weight: bold;
+  font-size: 0.85em;
+}
+
+.store-restore {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  text-decoration: underline;
+  font-size: 0.85em;
+  align-self: center;
+  padding: 6px;
+  cursor: pointer;
+}
+
+.store-note {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.85em;
+  font-style: italic;
+  text-align: center;
+}
+
+.store-note--error {
+  color: var(--accent-red);
+  font-style: normal;
 }
 
 /* --- Brand (ui/brand.ts) ---------------------------------------------------- */

@@ -189,35 +189,40 @@ export const ALL_SFX: SfxName[] = [
 
 // --- Music -------------------------------------------------------------------
 //
-// A bright, bouncy "campaign rally" bed in C major: a punchy chord stab on
-// every bar, an oom-pah bass alternating root and fifth, and a bubbly
-// arpeggio skipping through the chord. Two bars per chord, C - G - Am - F,
-// 132 bpm (a ~14.5-second loop).
+// Two procedurally-generated beds (no audio files to ship): a bright,
+// bouncy "campaign rally" for the menu/lobby, and a tenser, driving
+// "showdown" once an actual duel is on screen. Same synthesis toolkit for
+// both -- different chords, rhythm and tempo are what make them read as
+// distinct, not different instruments.
 
-const BPM = 132;
-const EIGHTH = 60 / BPM / 2;
-const CHORDS = [
+export type MusicTheme = "menu" | "duel";
+
+// Menu: a punchy chord stab on every bar, an oom-pah bass alternating root
+// and fifth, and a bubbly arpeggio skipping through the chord. Two bars
+// per chord, C - G - Am - F, 132 bpm (a ~14.5-second loop).
+const MENU_BPM = 132;
+const MENU_STEP_SECONDS = 60 / MENU_BPM / 2;
+const MENU_CHORDS = [
   [48, 52, 55], // C major
   [43, 47, 50], // G major
   [45, 48, 52], // A minor
   [41, 45, 48], // F major
 ];
-const STEPS_PER_CHORD = 16; // two bars of eighths
+const MENU_STEPS_PER_CHORD = 16; // two bars of eighths
 // Which chord tone (0/1/2) or the root an octave up (3) the arpeggio plays
 // on each eighth (-1: rest).
-const ARP = [0, 1, 2, 3, 2, 1, 0, 1, 2, 3, 2, 1, 0, 2, 1, 3];
+const MENU_ARP = [0, 1, 2, 3, 2, 1, 0, 1, 2, 3, 2, 1, 0, 2, 1, 3];
 
-/** Schedules music step `step` (an eighth note) at time `t`. */
-export function playMusicStep(ctx: BaseAudioContext, out: AudioNode, step: number, t: number): void {
-  const chordIndex = Math.floor(step / STEPS_PER_CHORD) % CHORDS.length;
-  const chord = CHORDS[chordIndex];
-  const inChord = step % STEPS_PER_CHORD;
+function playMenuStep(ctx: BaseAudioContext, out: AudioNode, step: number, t: number): void {
+  const chordIndex = Math.floor(step / MENU_STEPS_PER_CHORD) % MENU_CHORDS.length;
+  const chord = MENU_CHORDS[chordIndex];
+  const inChord = step % MENU_STEPS_PER_CHORD;
 
   // A short, bright stab on the chord change -- an accent, not a wash.
   if (inChord === 0) {
     for (const detune of [-6, 6]) {
       for (const note of chord) {
-        tone(ctx, out, midi(note + 12), t, EIGHTH * 3, { type: "sawtooth", gain: 0.045, attack: 0.01, filter: 1800, detune });
+        tone(ctx, out, midi(note + 12), t, MENU_STEP_SECONDS * 3, { type: "sawtooth", gain: 0.045, attack: 0.01, filter: 1800, detune });
       }
     }
   }
@@ -226,18 +231,82 @@ export function playMusicStep(ctx: BaseAudioContext, out: AudioNode, step: numbe
   if (inChord % 2 === 0) {
     const onUpbeat = Math.floor(inChord / 2) % 2 === 1;
     const bassNote = (onUpbeat ? chord[2] : chord[0]) - 12;
-    tone(ctx, out, midi(bassNote), t, EIGHTH * 1.7, { type: "triangle", gain: 0.17, attack: 0.008, filter: 550 });
+    tone(ctx, out, midi(bassNote), t, MENU_STEP_SECONDS * 1.7, { type: "triangle", gain: 0.17, attack: 0.008, filter: 550 });
   }
   // A bubbly arpeggio skipping up and down through the chord, an octave
   // above the stab -- the part that actually makes it feel "fun."
-  const arp = ARP[inChord];
+  const arp = MENU_ARP[inChord];
   if (arp >= 0) {
     const note = (arp === 3 ? chord[0] + 12 : chord[arp]) + 24;
     tone(ctx, out, midi(note), t, 0.22, { type: "square", gain: 0.028, attack: 0.004, filter: 3000 });
   }
 }
 
-export const MUSIC_STEP_SECONDS = EIGHTH;
+// Duel: a minor-key "showdown" -- i - VI - III - V (Am - F - C - E, the E
+// major a dominant that keeps pulling back to Am), faster at 150 bpm, with
+// a driving pulsed bass, a tight noise shaker on every eighth, a low tom
+// thump on the backbeat, and a sparse, clipped motif instead of a
+// continuously bubbling arpeggio -- reads as tenser and more urgent than
+// the menu bed rather than just louder or faster.
+const DUEL_BPM = 150;
+const DUEL_STEP_SECONDS = 60 / DUEL_BPM / 2;
+const DUEL_CHORDS = [
+  [45, 48, 52], // A minor
+  [41, 45, 48], // F major
+  [48, 52, 55], // C major
+  [40, 44, 47], // E major (dominant -- the pull back to A minor)
+];
+const DUEL_STEPS_PER_CHORD = 16;
+// Sparser and more clipped than the menu's arpeggio -- a motif that
+// punches through rather than filling every eighth.
+const DUEL_ARP = [0, -1, 2, -1, 0, -1, 3, -1, 2, -1, 0, -1, 1, -1, 0, -1];
+
+function playDuelStep(ctx: BaseAudioContext, out: AudioNode, step: number, t: number): void {
+  const chordIndex = Math.floor(step / DUEL_STEPS_PER_CHORD) % DUEL_CHORDS.length;
+  const chord = DUEL_CHORDS[chordIndex];
+  const inChord = step % DUEL_STEPS_PER_CHORD;
+
+  // A hard downbeat hit on the chord change -- tighter-filtered sawtooth
+  // than the menu's stab, for a punchier "showdown" accent.
+  if (inChord === 0) {
+    for (const detune of [-4, 4]) {
+      for (const note of chord) {
+        tone(ctx, out, midi(note), t, DUEL_STEP_SECONDS * 2, { type: "sawtooth", gain: 0.06, attack: 0.004, filter: 900, detune });
+      }
+    }
+  }
+  // A driving pulsed bass -- root, root, fifth, root every bar -- more
+  // urgency than the menu's alternating oom-pah.
+  if (inChord % 2 === 0) {
+    const beat = Math.floor(inChord / 2) % 4;
+    const bassNote = (beat === 2 ? chord[2] : chord[0]) - 12;
+    tone(ctx, out, midi(bassNote), t, DUEL_STEP_SECONDS * 1.3, { type: "square", gain: 0.16, attack: 0.004, filter: 700 });
+  }
+  // A tight noise shaker on every eighth for drive, plus a low tom thump
+  // on the backbeat -- percussion the menu theme doesn't have.
+  noise(ctx, out, t, 0.045, { gain: 0.05, filter: "highpass", freq: 6000 });
+  if (inChord % 4 === 2) {
+    tone(ctx, out, midi(chord[0] - 24), t, 0.12, { type: "sine", gain: 0.12, attack: 0.002, filter: 220 });
+  }
+  // A sparse, clipped motif -- punches through instead of bubbling
+  // continuously like the menu's arpeggio.
+  const arp = DUEL_ARP[inChord];
+  if (arp >= 0) {
+    const note = (arp === 3 ? chord[0] + 12 : chord[arp]) + 24;
+    tone(ctx, out, midi(note), t, 0.14, { type: "square", gain: 0.032, attack: 0.003, filter: 2600 });
+  }
+}
+
+/** Schedules music step `step` (an eighth note, in the given theme) at time `t`. */
+export function playMusicStep(ctx: BaseAudioContext, out: AudioNode, theme: MusicTheme, step: number, t: number): void {
+  if (theme === "duel") playDuelStep(ctx, out, step, t);
+  else playMenuStep(ctx, out, step, t);
+}
+
+/** How long one music step lasts, in seconds, for the given theme. */
+export function musicStepSeconds(theme: MusicTheme): number {
+  return theme === "duel" ? DUEL_STEP_SECONDS : MENU_STEP_SECONDS;
+}
 
 // --- The crowd (the results screen) ---------------------------------------------
 //

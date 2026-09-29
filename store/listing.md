@@ -69,10 +69,18 @@ already in this folder:
 
 ## App content (questionnaires)
 
-- **Ads**: "No, my app does not contain ads" for now. Change it when ads arrive
-  (and update the privacy policy).
-- **Data safety**: "No data collected" and "No data shared". Settings stay on the
-  device. Online play, once it's live, sends game moves only and has no accounts.
+- **Ads**: "Yes, my app contains ads" -- the AdMob SDK ships in every build
+  from version 1.1.0 (versionCode 2) on, even while every ad unit still
+  defaults to Google's test ad IDs. Not "excessive/disruptive": the
+  interstitial only shows between matches, never mid-duel.
+- **Data safety**: declare **Advertising ID** as collected and shared with
+  Google/AdMob, purpose "Advertising or marketing," not required (optional)
+  and not used for account creation. If Remove Ads or a paid edition is
+  live on this build, also declare **Purchase history**, shared with
+  RevenueCat, purpose "App functionality." Everything else (settings,
+  game progress, Donations balance) is "No data collected" -- it never
+  leaves the device. Online play still sends game moves only, no accounts.
+  See `docs/ADS.md` and `docs/MONETIZATION.md`.
 - **Target audience**: 13+ (or 16+). It is political satire, not a children's
   game. Don't select under-13 age groups.
 - **Content rating (IARC questionnaire)**: no violence, sex, gambling, drugs or

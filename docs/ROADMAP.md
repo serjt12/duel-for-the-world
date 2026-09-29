@@ -8,7 +8,8 @@ Owner decisions so far:
 - **Android first.**
 - **Landscape.**
 - **Live online matches and matches against the computer.**
-- **Free with ads.**
+- **Free with ads**, plus a one-time Remove Ads purchase and paid country
+  editions as DLC (RevenueCat) -- see Phase 5.
 
 ## Done
 
@@ -49,8 +50,11 @@ Owner decisions so far:
 - [x] Release build setup: signing from `keystore.properties`,
   `pnpm android:bundle`.
 - [x] Privacy policy page and store listing texts (`store/`).
-- [ ] Google Play developer account ($25, one-time, identity check).
+- [x] Google Play developer account ($25, one-time, identity check).
 - [x] Create the upload key and build the first `.aab`.
+- [x] versionCode 2 / versionName 1.1.0 (music polish, RevenueCat
+  purchases, AdMob ads, Campaign Donations) built and uploaded to Closed
+  testing -- see Phase 5 for what's new in it.
 - [x] Host the privacy policy at a public address: https://serjt12.github.io/duel-for-the-world/
 - [x] Phone screenshots for the listing: 5 landscape shots (main menu,
   tutorial, busy board, a Scandal, Election Night) captured and in `store/`.
@@ -84,9 +88,18 @@ Owner decisions so far:
 
 ### Phase 5: Ads and retention
 
-- [ ] AdMob, between matches only and never during one, with a frequency cap.
-  Consent form for EEA/UK players.
-- [ ] Optional rewarded ads.
+- [x] AdMob interstitial, between matches only and never during one, with a
+  frequency cap (every 3rd real match), respecting Remove Ads. Consent
+  form for EEA/UK players before ever requesting an ad. Ships on Google's
+  test ad IDs until real ones are set -- see `docs/ADS.md`.
+- [x] Rewarded ads, wired to a "Watch ad: +1 Donation" button in the Field
+  Guide. Donations (`state/donations.ts`) spend at 5 per unlock to open the
+  next World Edition card early, via a `bonusUnlockWins` counter kept
+  separate from real match wins -- see `docs/ADS.md`'s "Donations"
+  section.
+- [x] Remove Ads (one-time purchase) and a generic paid-edition-DLC
+  mechanism, via RevenueCat -- see `docs/MONETIZATION.md`. World and
+  Colombia both stay free.
 - [x] Card unlocks (World Edition): a 20-card starter set, unlocking the
   other 19 cards two offline wins vs. the computer apart, up to full
   unlock at 38 wins. Online play always uses the whole edition -- only
@@ -100,6 +113,11 @@ Owner decisions so far:
   screen itself reveals a newly-unlocked card on the spot (name, art, a
   pop-in animation, and a button straight into its Field Guide entry) --
   see `ui/finale.ts`'s `unlockedCardId` plumbing.
+- [ ] **Still needed before any of this is truly live:** a real AdMob
+  account + ad unit IDs, a real RevenueCat + Play Console product setup,
+  and a real-device test of the interstitial, the rewarded-ad/Donations
+  flow and the Remove Ads purchase -- none of the three has been verified
+  on-device yet.
 - [ ] A "World Tour" campaign against computer Leaders; a daily challenge;
   later, a deck builder.
 

@@ -1,6 +1,7 @@
 import type { Edition } from "@duel-for-the-world/duel-content";
 import { isGuideDone } from "../guide/coach";
 import type { AiLevel, ClientState } from "../state/ClientState";
+import { adsAreRemoved, isEditionUnlocked, purchasesState } from "../store/purchases";
 import { el } from "./dom";
 import { EMBLEM_URL, GAME_NAME, GAME_TAGLINE } from "./brand";
 import { flavorOf } from "./flavor";
@@ -17,6 +18,7 @@ export interface MenuActions {
   goOnline(): void;
   openHowToPlay(): void;
   openShop(): void;
+  openStore(): void;
 }
 
 const LEVELS: Array<{ level: AiLevel; label: string; blurb: string }> = [
@@ -63,6 +65,21 @@ function choice(label: string, blurb: string, selected: boolean, onPick: () => v
   );
 }
 
+// A not-yet-purchased edition: dimmed, a lock badge instead of a
+// selected/unselected state, and tapping it opens the Store rather than
+// picking it (see store/purchases.ts's PAID_EDITIONS -- empty today, so
+// this path isn't reachable yet, but it's ready for the next edition).
+function lockedChoice(label: string, price: string | null, openStore: () => void): HTMLElement {
+  return el(
+    "button",
+    { className: "menu-choice menu-choice--locked", onclick: openStore },
+    [
+      el("span", { className: "menu-choice-label" }, [label, " ", el("span", { className: "menu-choice-lock", ariaHidden: "true" }, ["\u{1F512}"])]),
+      el("span", { className: "menu-choice-blurb" }, [price ? `Buy for ${price}` : "Buy in the Store"]),
+    ],
+  );
+}
+
 export function renderMenu(state: ClientState, rerender: () => void, actions: MenuActions): HTMLElement {
   const title = [
     // On the setup screen the name shrinks to leave room for the choices.
@@ -103,7 +120,11 @@ export function renderMenu(state: ClientState, rerender: () => void, actions: Me
           el(
             "div",
             { className: "menu-choices" },
-            EDITIONS.map(({ edition, blurb }) => choice(flavorOf(edition).editionName, blurb, state.aiEdition === edition, pickEdition(edition))),
+            EDITIONS.map(({ edition, blurb }) =>
+              isEditionUnlocked(edition)
+                ? choice(flavorOf(edition).editionName, blurb, state.aiEdition === edition, pickEdition(edition))
+                : lockedChoice(flavorOf(edition).editionName, purchasesState().editionPrices[edition] ?? null, actions.openStore),
+            ),
           ),
         ]),
         el(
@@ -177,6 +198,11 @@ export function renderMenu(state: ClientState, rerender: () => void, actions: Me
       el("div", { className: "menu-row" }, [
         firstTime ? null : tutorial,
         el("button", { className: "menu-big menu-big--quiet", onclick: () => actions.openHowToPlay() }, ["How to Play"]),
+        el(
+          "button",
+          { className: "menu-big menu-big--quiet", onclick: () => actions.openStore() },
+          [adsAreRemoved() ? "Store" : "Remove Ads"],
+        ),
         el(
           "button",
           {

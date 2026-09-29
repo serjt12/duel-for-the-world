@@ -1,7 +1,7 @@
 import type { DuelEvent, DuelistId } from "@duel-for-the-world/duel-engine";
 import { onSettingsChange, settings } from "./settings";
-import { MUSIC_STEP_SECONDS, playCrowd, playMusicStep, playRecipe, prepareCrowd } from "./synth";
-import type { CrowdMood, SfxName } from "./synth";
+import { musicStepSeconds, playCrowd, playMusicStep, playRecipe, prepareCrowd } from "./synth";
+import type { CrowdMood, MusicTheme, SfxName } from "./synth";
 
 // Sound effects, music and vibration, all following the player's settings.
 //
@@ -19,6 +19,11 @@ let musicBus: GainNode | null = null;
 let musicTimer: number | null = null;
 let musicStep = 0;
 let musicAt = 0;
+// Which bed plays next -- the menu/lobby's "campaign rally", or the
+// tenser "showdown" once a duel is actually on screen. Set by app.ts on
+// every render (see setMusicTheme below); cheap to call every time since
+// it's a no-op unless the screen actually changed.
+let currentTheme: MusicTheme = "menu";
 
 function build(): AudioContext | null {
   if (ctx) return ctx;
@@ -44,9 +49,9 @@ const LOOKAHEAD = 0.6;
 function scheduleMusic(): void {
   if (!ctx || !musicBus) return;
   while (musicAt < ctx.currentTime + LOOKAHEAD) {
-    playMusicStep(ctx, musicBus, musicStep, musicAt);
+    playMusicStep(ctx, musicBus, currentTheme, musicStep, musicAt);
     musicStep += 1;
-    musicAt += MUSIC_STEP_SECONDS;
+    musicAt += musicStepSeconds(currentTheme);
   }
 }
 
@@ -74,6 +79,22 @@ function stopMusic(): void {
     window.setTimeout(() => old.disconnect(), 600);
     musicBus = null;
   }
+}
+
+/**
+ * Which theme plays next. Called on every render (cheap: a no-op unless
+ * the screen actually changed since the last call) -- switches by
+ * crossfading through the existing stop/start fade envelopes rather than
+ * cutting hard mid-bar, so a screen change doesn't chop the music.
+ */
+export function setMusicTheme(theme: MusicTheme): void {
+  if (theme === currentTheme) return;
+  currentTheme = theme;
+  if (musicTimer === null) return; // not playing (yet) -- the next startMusic() just picks up the new theme
+  stopMusic();
+  window.setTimeout(() => {
+    if (settings().music && ctx?.state === "running") startMusic();
+  }, 450);
 }
 
 // --- Setup ----------------------------------------------------------------------

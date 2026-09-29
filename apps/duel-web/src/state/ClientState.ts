@@ -98,6 +98,10 @@ export interface ClientState {
   guide: { step: number; blocked: number } | null;
   // The Settings panel (sound, music, vibration) is open.
   settingsOpen: boolean;
+  // The Store panel (Remove Ads, paid editions -- see store/purchases.ts) is open,
+  // and any error from the last purchase/restore attempt made there.
+  storeOpen: boolean;
+  storeError: string | null;
   // The Card Shop panel (offline card unlocks -- see state/progress.ts) is open.
   shopOpen: boolean;
   // The Card Shop's Field Guide: which "type" tab is picked (all, an
@@ -141,6 +145,8 @@ export function createInitialState(): ClientState {
     embassyPick: null,
     guide: null,
     settingsOpen: false,
+    storeOpen: false,
+    storeError: null,
     shopOpen: false,
     shopFilter: "all",
     shopSelected: null,
