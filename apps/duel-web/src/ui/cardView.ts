@@ -1,5 +1,7 @@
 import { ACTOR_CARDS, CARDS, rulesText } from "@duel-for-the-world/duel-content";
 import type { ActorCardId, CardId, PolicyCardId } from "@duel-for-the-world/duel-content";
+import { locale } from "../i18n";
+import { localizedCardName } from "../i18n/cardText";
 import { CARD_ART, CARD_BACK_ART } from "./cardArt";
 import { describeCard } from "./cardInfo";
 import { el } from "./dom";
@@ -36,7 +38,7 @@ function renderEquipChips(equips: readonly PolicyCardId[] | undefined): HTMLElem
     "div",
     { className: "card-equips" },
     equips.map((policyId) =>
-      el("div", { className: "card-equip-chip", title: `Equipped: ${CARDS[policyId].name}` }, [
+      el("div", { className: "card-equip-chip", title: `Equipped: ${localizedCardName(policyId, CARDS[policyId].name)}` }, [
         artImage(CARD_ART[policyId]),
       ]),
     ),
@@ -91,7 +93,7 @@ export function renderCardFace(cardId: CardId, options: CardViewOptions = {}): H
   const display = describeCard(cardId);
   // Generated from the same effect data the engine resolves, so the text
   // on the card is always exactly what the card does.
-  const rules = rulesText(cardId);
+  const rules = rulesText(cardId, locale());
   const card = el(
     "div",
     {

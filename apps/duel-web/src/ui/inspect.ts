@@ -1,5 +1,6 @@
-import { CARDS, rulesText } from "@duel-for-the-world/duel-content";
+import { rulesText } from "@duel-for-the-world/duel-content";
 import type { CardId } from "@duel-for-the-world/duel-content";
+import { locale, t } from "../i18n";
 import { describeCard } from "./cardInfo";
 import { renderCardFace } from "./cardView";
 import { el } from "./dom";
@@ -23,15 +24,15 @@ export function closeCardInspector(): void {
 export function openCardInspector(cardId: CardId): void {
   closeCardInspector();
   const info = describeCard(cardId);
-  const rules = rulesText(cardId);
+  const rules = rulesText(cardId, locale());
   const big = el("div", { className: "inspect-card" }, [renderCardFace(cardId)]);
   const panel = el("div", { className: "inspect-text" }, [
     el("h2", {}, [info.name]),
     el("div", { className: "inspect-tag" }, [info.tagLine]),
     info.statsLine ? el("div", { className: "inspect-stats" }, [info.statsLine]) : null,
     rules ? el("p", { className: "inspect-rules" }, [rules]) : null,
-    el("p", { className: "inspect-flavor" }, [`“${CARDS[cardId].flavorText}”`]),
-    el("div", { className: "inspect-close" }, ["Tap anywhere to close"]),
+    el("p", { className: "inspect-flavor" }, [`“${info.flavorText}”`]),
+    el("div", { className: "inspect-close" }, [t("inspect.closeHint")]),
   ]);
   overlay = el(
     "div",

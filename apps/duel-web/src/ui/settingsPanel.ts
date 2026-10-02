@@ -3,14 +3,15 @@ import type { Settings } from "../audio/settings";
 import { audioStatus, playSfx, vibrate } from "../audio/sound";
 import type { ClientState } from "../state/ClientState";
 import { el } from "./dom";
+import { locale, setLocale, SUPPORTED_LOCALES, t } from "../i18n";
 
-// Settings: sound effects, music and vibration. Opens over the menu or a
-// duel (the gear in the board header).
+// Settings: sound effects, music, vibration, and (since this round)
+// language. Opens over the menu or a duel (the gear in the board header).
 
-const ROWS: Array<{ key: keyof Settings; label: string; blurb: string }> = [
-  { key: "sound", label: "Sound effects", blurb: "Cards, attacks, scandals." },
-  { key: "music", label: "Music", blurb: "A quiet background score." },
-  { key: "vibration", label: "Vibration", blurb: "A buzz for hits and scandals." },
+const ROWS: Array<{ key: keyof Settings; labelKey: string; blurbKey: string }> = [
+  { key: "sound", labelKey: "settings.sound.label", blurbKey: "settings.sound.blurb" },
+  { key: "music", labelKey: "settings.music.label", blurbKey: "settings.music.blurb" },
+  { key: "vibration", labelKey: "settings.vibration.label", blurbKey: "settings.vibration.blurb" },
 ];
 
 // If sound can't play yet (or at all), say so.
@@ -18,7 +19,38 @@ function soundNote(): HTMLElement | null {
   const status = audioStatus();
   if (status === "running") return null;
   return el("p", { className: "settings-note" }, [
-    status === "unsupported" ? "This device can't play the game's sound." : "Sound starts after your next tap.",
+    status === "unsupported" ? t("settings.sound.unsupported") : t("settings.sound.pending"),
+  ]);
+}
+
+// A one-row "chip group" the same shape as the Field Guide's type filters
+// (see ui/renderShop.ts's .dex-filters/.dex-chip) -- reused here instead
+// of a toggle, since this is a pick-one-of-N choice, not an on/off switch.
+function languageRow(rerender: () => void): HTMLElement {
+  const current = locale();
+  return el("div", { className: "settings-row settings-row--language" }, [
+    el("span", { className: "settings-text" }, [
+      el("span", { className: "menu-choice-label" }, [t("settings.language.label")]),
+      el("span", { className: "menu-choice-blurb" }, [t("settings.language.blurb")]),
+    ]),
+    el(
+      "div",
+      { className: "dex-filters", role: "group", ariaLabel: t("settings.language.label") },
+      SUPPORTED_LOCALES.map(({ code, label }) =>
+        el(
+          "button",
+          {
+            type: "button",
+            className: `dex-chip${code === current ? " dex-chip--active" : ""}`,
+            onclick: () => {
+              setLocale(code);
+              rerender();
+            },
+          },
+          [label],
+        ),
+      ),
+    ),
   ]);
 }
 
@@ -31,10 +63,10 @@ export function renderSettings(state: ClientState, rerender: () => void): HTMLEl
   const current = settings();
   const panel = el(
     "div",
-    { className: "settings-panel", role: "dialog", ariaLabel: "Settings", onclick: (event: MouseEvent) => event.stopPropagation() },
+    { className: "settings-panel", role: "dialog", ariaLabel: t("settings.heading"), onclick: (event: MouseEvent) => event.stopPropagation() },
     [
-      el("h2", { className: "menu-heading" }, ["Settings"]),
-      ...ROWS.map(({ key, label, blurb }) => {
+      el("h2", { className: "menu-heading" }, [t("settings.heading")]),
+      ...ROWS.map(({ key, labelKey, blurbKey }) => {
         const on = current[key];
         return el(
           "button",
@@ -52,15 +84,16 @@ export function renderSettings(state: ClientState, rerender: () => void): HTMLEl
           },
           [
             el("span", { className: "settings-text" }, [
-              el("span", { className: "menu-choice-label" }, [label]),
-              el("span", { className: "menu-choice-blurb" }, [blurb]),
+              el("span", { className: "menu-choice-label" }, [t(labelKey)]),
+              el("span", { className: "menu-choice-blurb" }, [t(blurbKey)]),
             ]),
             el("span", { className: "settings-switch", ariaHidden: "true" }, [el("span", { className: "settings-knob" })]),
           ],
         );
       }),
+      languageRow(rerender),
       soundNote(),
-      el("div", { className: "menu-actions" }, [el("span", {}), el("button", { className: "primary", onclick: close }, ["Done"])]),
+      el("div", { className: "menu-actions" }, [el("span", {}), el("button", { className: "primary", onclick: close }, [t("common.done")])]),
     ],
   );
   return el("div", { className: "settings-backdrop", onclick: close }, [panel]);

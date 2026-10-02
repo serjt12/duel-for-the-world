@@ -32,6 +32,7 @@ import { renderShop } from "./ui/renderShop";
 import { renderStore } from "./ui/renderStore";
 import { electionLine, showTurnBanner } from "./ui/turnBanner";
 import { installStageResize, isPhoneLayout } from "./ui/stage";
+import { t, tf } from "./i18n";
 
 // The whole app, minus the stylesheet import (main.ts adds that, so the
 // test harness can load this module directly).
@@ -116,6 +117,12 @@ export function startApp(appRoot: HTMLElement, serverUrl: string | null = DEFAUL
   function rerender(): void {
     const currentPhase = state.duel?.phase ?? null;
     document.body.classList.toggle("phone-layout", isPhoneLayout() && state.screen === "board");
+    // Unlike "phone-layout" above, this isn't scoped to the board: every
+    // screen in landscape-phone shape (menu, lobby, and any overlay
+    // opened from them) needs the WebView's native horizontal
+    // rubber-band/overscroll bounce turned off too, or it reads as an
+    // unwanted horizontal scroll (see style.css's body.landscape-locked).
+    document.body.classList.toggle("landscape-locked", isPhoneLayout());
     // The tenser "showdown" bed once a duel is actually on screen, the
     // bright "campaign rally" bed everywhere else (menu, lobby) -- a
     // no-op unless the screen actually changed since the last render.
@@ -164,9 +171,9 @@ export function startApp(appRoot: HTMLElement, serverUrl: string | null = DEFAUL
       : fresh.some((event) => event.kind === "turn-started");
     if (!started) return;
     if (duel.activeDuelistId === you) {
-      showTurnBanner("Your turn", first ? "You go first" : electionLine(duel.turnNumber, duel.election));
+      showTurnBanner(t("turnBanner.yourTurn"), first ? t("turnBanner.youGoFirst") : electionLine(duel.turnNumber, duel.election));
     } else {
-      showTurnBanner(`${first ? "They go first" : "Their turn"}`, state.opponentName, "them");
+      showTurnBanner(first ? t("turnBanner.theyGoFirst") : t("turnBanner.theirTurn"), state.opponentName, "them");
     }
   }
 
@@ -213,7 +220,7 @@ export function startApp(appRoot: HTMLElement, serverUrl: string | null = DEFAUL
       { edition, level: state.aiLevel, cardPool: unlockedCardsOfEdition(edition, effectiveOfflineWins()) },
       `Computer · ${LEVEL_NAMES[state.aiLevel]}`,
     );
-    state.statusLine = "No one was online -- you're playing the computer instead.";
+    state.statusLine = t("status.noOneOnline");
     rerender();
   }
 
@@ -232,7 +239,7 @@ export function startApp(appRoot: HTMLElement, serverUrl: string | null = DEFAUL
         actionInFlight = false;
         playBlocked();
         state.interaction = { mode: "idle" };
-        state.statusLine = `Not allowed: ${reason}`;
+        state.statusLine = tf("status.notAllowed", { reason });
         rerender();
       },
       onThinking: (thinking) => {
@@ -295,7 +302,7 @@ export function startApp(appRoot: HTMLElement, serverUrl: string | null = DEFAUL
           state.roomCode = roomCode;
           state.you = you;
           state.screen = "board";
-          state.statusLine = "Share this room code with your opponent.";
+          state.statusLine = t("status.roomCreated");
           rerender();
         },
         onJoinedRoom: (roomCode, you, serverProtocolVersion) => {
@@ -311,11 +318,11 @@ export function startApp(appRoot: HTMLElement, serverUrl: string | null = DEFAUL
           state.roomCode = roomCode;
           state.you = you;
           state.connectionOpen = true;
-          state.statusLine = "Back in the duel.";
+          state.statusLine = t("status.backInDuel");
           rerender();
         },
         onQuickMatchWaiting: () => {
-          state.statusLine = "Looking for an opponent -- this may take a few seconds.";
+          state.statusLine = t("status.quickMatchWaiting");
           rerender();
         },
         onMatchFound: (roomCode, you, serverProtocolVersion) => {
@@ -336,23 +343,23 @@ export function startApp(appRoot: HTMLElement, serverUrl: string | null = DEFAUL
           state.roomCode = roomCode;
           state.you = you;
           state.screen = "board";
-          state.statusLine = "Opponent found -- the duel begins.";
+          state.statusLine = t("status.opponentFound");
           rerender();
         },
         onOpponentJoined: () => {
-          state.statusLine = "Opponent joined -- the duel begins.";
+          state.statusLine = t("status.opponentJoined");
           rerender();
         },
         onOpponentDisconnected: () => {
-          state.statusLine = "Opponent's connection dropped -- waiting for them to come back...";
+          state.statusLine = t("status.opponentDisconnected");
           rerender();
         },
         onOpponentReconnected: () => {
-          state.statusLine = "Opponent is back.";
+          state.statusLine = t("status.opponentReconnected");
           rerender();
         },
         onOpponentLeft: () => {
-          state.statusLine = "Your opponent didn't come back in time -- you win by forfeit.";
+          state.statusLine = t("status.opponentForfeit");
           rerender();
         },
         onState,
@@ -362,11 +369,11 @@ export function startApp(appRoot: HTMLElement, serverUrl: string | null = DEFAUL
           // Drop any half-finished play (e.g. a card waiting in a zone for the
           // server's answer) so the card goes back to the hand.
           state.interaction = { mode: "idle" };
-          state.statusLine = `Action rejected: ${reason}`;
+          state.statusLine = tf("status.actionRejected", { reason });
           rerender();
         },
         onServerError: (reason) => {
-          state.statusLine = `Server error: ${reason}`;
+          state.statusLine = tf("status.serverError", { reason });
           rerender();
         },
         onDisconnected: () => {
@@ -384,12 +391,12 @@ export function startApp(appRoot: HTMLElement, serverUrl: string | null = DEFAUL
           // own (see DuelClient) before this counts as "gone for good" --
           // onReconnectFailed is what says the latter.
           state.statusLine = state.roomCode
-            ? "Connection lost -- trying to reconnect..."
-            : "Couldn't reach the game server.";
+            ? t("status.connectionLostReconnecting")
+            : t("status.couldNotReachServer");
           rerender();
         },
         onReconnectFailed: () => {
-          state.statusLine = "Couldn't reconnect to the match.";
+          state.statusLine = t("status.couldNotReconnect");
           rerender();
         },
       });

@@ -9,6 +9,7 @@ import {
   restorePurchases,
 } from "../store/purchases";
 import type { ClientState } from "../state/ClientState";
+import { t } from "../i18n";
 import { el } from "./dom";
 import { flavorOf } from "./flavor";
 
@@ -35,7 +36,7 @@ function storeRow(
       el("span", { className: "store-item-blurb" }, [blurb]),
     ]),
     owned
-      ? el("span", { className: "store-owned-badge" }, ["Owned"])
+      ? el("span", { className: "store-owned-badge" }, [t("store.owned")])
       : el(
           "button",
           { className: "primary store-item-button", disabled: busy, onclick: onBuy },
@@ -56,14 +57,14 @@ export function renderStore(state: ClientState, rerender: () => void): HTMLEleme
   const handleResult = async (attempt: () => ReturnType<typeof buyRemoveAds>) => {
     state.storeError = null;
     const result = await attempt();
-    if (!result.ok && !result.cancelled) state.storeError = result.error ?? "The purchase didn't go through.";
+    if (!result.ok && !result.cancelled) state.storeError = result.error ?? t("store.purchaseFailed");
     rerender();
   };
 
   const rows: HTMLElement[] = [
     storeRow(
-      "Remove Ads",
-      "No more ads between matches, ever. One-time purchase.",
+      t("menu.removeAds"),
+      t("store.removeAds.blurb"),
       adsAreRemoved(),
       purchases.removeAdsPrice,
       purchases.busy,
@@ -74,7 +75,7 @@ export function renderStore(state: ClientState, rerender: () => void): HTMLEleme
       const owned = purchases.unlockedEditions.has(edition);
       return storeRow(
         listing?.label ?? flavorOf(edition).editionName,
-        "A new set of leaders and cards to duel with.",
+        t("store.edition.blurb"),
         owned,
         purchases.editionPrices[edition] ?? null,
         purchases.busy,
@@ -84,20 +85,16 @@ export function renderStore(state: ClientState, rerender: () => void): HTMLEleme
   ];
 
   const note = !purchases.available
-    ? el("p", { className: "store-note" }, [
-        purchases.ready
-          ? "Purchases aren't available on this build (only in the installed Android app)."
-          : "Loading...",
-      ])
+    ? el("p", { className: "store-note" }, [purchases.ready ? t("store.notAvailable") : t("store.loading")])
     : null;
 
   const errorNote = state.storeError ? el("p", { className: "store-note store-note--error" }, [state.storeError]) : null;
 
   const panel = el(
     "div",
-    { className: "settings-panel", role: "dialog", ariaLabel: "Store", onclick: (event: MouseEvent) => event.stopPropagation() },
+    { className: "settings-panel", role: "dialog", ariaLabel: t("menu.store"), onclick: (event: MouseEvent) => event.stopPropagation() },
     [
-      el("h2", { className: "menu-heading" }, ["Store"]),
+      el("h2", { className: "menu-heading" }, [t("menu.store")]),
       ...rows,
       note,
       errorNote,
@@ -109,10 +106,10 @@ export function renderStore(state: ClientState, rerender: () => void): HTMLEleme
               disabled: purchases.busy,
               onclick: () => void handleResult(restorePurchases),
             },
-            ["Restore purchases"],
+            [t("store.restorePurchases")],
           )
         : null,
-      el("div", { className: "menu-actions" }, [el("span", {}), el("button", { className: "primary", onclick: close }, ["Done"])]),
+      el("div", { className: "menu-actions" }, [el("span", {}), el("button", { className: "primary", onclick: close }, [t("common.done")])]),
     ].filter((node): node is HTMLElement => node !== null),
   );
   return el("div", { className: "settings-backdrop", onclick: close }, [panel]);

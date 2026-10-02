@@ -1,6 +1,8 @@
 import { ACTOR_CARDS, CARDS, POLICY_CARDS, embassyChoiceIn } from "@duel-for-the-world/duel-content";
 import type { CardId, InstantEffect } from "@duel-for-the-world/duel-content";
 import { ACTOR_ZONE_COUNT, eligibleEmbassyIndices } from "@duel-for-the-world/duel-engine";
+import { t, tf } from "../i18n";
+import { localizedCardName } from "../i18n/cardText";
 import type { PlayerSlot, PublicDuelState } from "@duel-for-the-world/duel-server";
 import type { ClientState } from "../state/ClientState";
 import { renderCardFace } from "./cardView";
@@ -56,12 +58,12 @@ export function effectsOfPlay(
 export function retrievalBlock(duel: PublicDuelState, you: PlayerSlot, cardId: CardId): string | null {
   const choice = embassyChoice(duel, you, effectsOfPlay(cardId, "activate"));
   if (!choice) return null;
-  const whose = choice.owner === you ? "your" : "your opponent's";
   if (choice.indices.length === 0) {
-    return `Nothing in ${whose} ${flavor().embassyWord} it can bring back yet.`;
+    const key = choice.owner === you ? "embassyPicker.blockedEmpty.yours" : "embassyPicker.blockedEmpty.theirs";
+    return tf(key, { embassy: flavor().embassyWord });
   }
   if (choice.effect.to === "field" && duel.duelists[you].field.length >= ACTOR_ZONE_COUNT) {
-    return "Your Actor zones are full -- there's nowhere to bring an Actor back to.";
+    return t("embassyPicker.blockedFull");
   }
   return null;
 }
@@ -91,11 +93,11 @@ export function withEmbassyPick(
 
 function describeWhat(choice: EmbassyChoice, you: PlayerSlot): string {
   const { filter, to } = choice.effect;
-  const kind = filter.category === "actor" ? "an Actor" : filter.category === "policy" ? "a Policy" : "a card";
-  const limit = filter.maxAtk !== undefined ? ` with ATK ${filter.maxAtk} or less` : "";
-  const whose = choice.owner === you ? "your" : "your opponent's";
-  const where = to === "field" ? "revive onto your field" : "add to your hand";
-  return `Pick ${kind}${limit} from ${whose} ${flavor().embassyWord} to ${where}.`;
+  const kind = filter.category === "actor" ? t("embassyPicker.kind.actor") : filter.category === "policy" ? t("embassyPicker.kind.policy") : t("embassyPicker.kind.card");
+  const limit = filter.maxAtk !== undefined ? tf("embassyPicker.limit", { n: String(filter.maxAtk) }) : "";
+  const where = to === "field" ? t("embassyPicker.where.field") : t("embassyPicker.where.hand");
+  const key = choice.owner === you ? "embassyPicker.describe.yours" : "embassyPicker.describe.theirs";
+  return tf(key, { kind, limit, embassy: flavor().embassyWord, where });
 }
 
 /** The picker overlay, or null when no pick is pending. */
@@ -123,14 +125,14 @@ export function renderEmbassyPicker(state: ClientState, rerender: () => void): H
       {
         className: "viewer viewer--picker",
         role: "dialog",
-        ariaLabel: `${CARDS[cardId].name}: choose a card`,
+        ariaLabel: tf("embassyPicker.chooseTitle", { name: localizedCardName(cardId, CARDS[cardId].name) }),
         onclick: (event: MouseEvent) => event.stopPropagation(),
       },
       [
         el("div", { className: "viewer-header" }, [
-          el("h2", {}, [CARDS[cardId].name]),
+          el("h2", {}, [localizedCardName(cardId, CARDS[cardId].name)]),
           el("span", { className: "viewer-count" }, [describeWhat(choice, state.you)]),
-          el("button", { className: "tutorial-close", title: "Cancel", onclick: cancel }, ["×"]),
+          el("button", { className: "tutorial-close", title: t("common.cancel"), onclick: cancel }, ["×"]),
         ]),
         el(
           "div",
@@ -140,7 +142,7 @@ export function renderEmbassyPicker(state: ClientState, rerender: () => void): H
               "button",
               {
                 className: "viewer-card viewer-card--pickable",
-                title: `Choose ${CARDS[archive[index]].name}`,
+                title: tf("embassyPicker.choose", { name: localizedCardName(archive[index], CARDS[archive[index]].name) }),
                 onclick: () => pick(index),
               },
               [renderCardFace(archive[index])],

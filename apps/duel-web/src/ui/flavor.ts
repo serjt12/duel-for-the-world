@@ -1,11 +1,17 @@
 import { EMBASSY_TEXT } from "@duel-for-the-world/duel-content";
 import type { Edition } from "@duel-for-the-world/duel-content";
 import type { WinReason } from "@duel-for-the-world/duel-engine";
+import { locale } from "../i18n";
 
-// Everything the UI says that depends on the edition being played. The
-// World Edition is English-only; Edición Colombia keeps its Spanish
-// flavor (La Embajada, Titulares, ¡Revancha!...). Game terms (Mandate,
-// Campaign, Resistance...) are English in both.
+// Everything the UI says that depends on the edition being played *and*
+// the UI language. Two independent axes:
+//   - Edition (World / Edición Colombia) picks which newspaper, terms and
+//     win-screen copy are in play (La Embajada vs. the Embassy, etc.).
+//   - Locale (en / es) picks which language that newspaper is written in.
+// World Edition was originally English-only and Edición Colombia was
+// originally Spanish-only, so each edition still has its own "native"
+// language below (WORLD / COLOMBIA) plus a translation into the other
+// (WORLD_ES / COLOMBIA_EN) for when the UI locale doesn't match.
 //
 // The current edition is set once per state update (applyServerState),
 // so renderers just call flavor() instead of threading it everywhere.
@@ -101,30 +107,79 @@ const COLOMBIA: Flavor = {
     election: {
       won: {
         headline: "¡ARRASÓ EN LAS URNAS!",
-        deck: "You won Election Night. The keys to El Palacio are yours -- your rival has been appointed ambassador somewhere very, very far away.",
+        deck: "Ganaste la Noche Electoral. Las llaves de El Palacio son tuyas -- tu rival fue nombrado embajador en algún lugar muy, muy lejano.",
       },
-      lost: { headline: "DERROTA EN LAS URNAS", deck: "The voters have spoken. A diplomatic post at La Embajada awaits you." },
+      lost: { headline: "DERROTA EN LAS URNAS", deck: "Los votantes han hablado. Un puesto diplomático en La Embajada te espera." },
     },
     runoff: {
-      won: { headline: "¡GANÓ LA SEGUNDA VUELTA!", deck: "A photo finish -- and the photo is of you, waving from the balcony of El Palacio." },
-      lost: { headline: "PERDIÓ LA SEGUNDA VUELTA", deck: "So close. A recount has been requested; nobody expects it to change anything." },
+      won: { headline: "¡GANÓ LA SEGUNDA VUELTA!", deck: "Un final fotográfico -- y la foto eres tú, saludando desde el balcón de El Palacio." },
+      lost: { headline: "PERDIÓ LA SEGUNDA VUELTA", deck: "Tan cerca. Se pidió un reconteo; nadie espera que cambie nada." },
     },
     tiebreak: {
-      won: { headline: "¡EMPATE TÉCNICO... Y GANA EL MÁS LIMPIO!", deck: "A dead heat, decided by your cleaner record: fewer cards in La Embajada." },
-      lost: { headline: "EMPATE TÉCNICO: LO HUNDE SU PRONTUARIO", deck: "A dead heat -- and your longer record in La Embajada cost you." },
+      won: { headline: "¡EMPATE TÉCNICO... Y GANA EL MÁS LIMPIO!", deck: "Un empate técnico, decidido por tu récord más limpio: menos cartas en La Embajada." },
+      lost: { headline: "EMPATE TÉCNICO: LO HUNDE SU PRONTUARIO", deck: "Un empate técnico -- y tu historial más largo en La Embajada te costó caro." },
     },
     mandate: {
-      won: { headline: "¡EL RIVAL RENUNCIA!", deck: "With no Mandate left, your rival has presented an 'irrevocable' resignation." },
-      lost: { headline: "RENUNCIA IRREVOCABLE", deck: "Your Mandate hit zero. There's always a talk show that will have you." },
+      won: { headline: "¡EL RIVAL RENUNCIA!", deck: "Sin Mandato que perder, tu rival presentó una renuncia 'irrevocable'." },
+      lost: { headline: "RENUNCIA IRREVOCABLE", deck: "Tu Mandato llegó a cero. Siempre habrá un programa de entrevistas que te quiera." },
     },
     "deck-out": {
-      won: { headline: "¡EL RIVAL SE QUEDÓ SIN CAMPAÑA!", deck: "Out of cards, out of ideas, out of the race." },
-      lost: { headline: "SIN CAMPAÑA, SIN VOTOS", deck: "You ran out of cards before you ran out of promises." },
+      won: { headline: "¡EL RIVAL SE QUEDÓ SIN CAMPAÑA!", deck: "Sin cartas, sin ideas, fuera de la contienda." },
+      lost: { headline: "SIN CAMPAÑA, SIN VOTOS", deck: "Te quedaste sin cartas antes de quedarte sin promesas." },
+    },
+  },
+};
+
+// World Edition in Spanish, for when the UI locale is "es". Edición
+// Colombia already writes in Spanish regardless of UI locale (its own
+// long-standing flavor), so it needs no English counterpart.
+const WORLD_ES: Flavor = {
+  edition: "world",
+  editionName: "Edición Mundial",
+  embassy: "La Embajada",
+  embassyThe: "la Embajada",
+  embassyWord: "Embajada",
+  headlines: "Titulares",
+  runoff: "Segunda Vuelta",
+  runoffBang: "¡SEGUNDA VUELTA!",
+  scandalBang: "¡ESCÁNDALO!",
+  rematch: "¡Revancha!",
+  masthead: "EL GIRO DIARIO",
+  countTitle: "El Escrutinio",
+  countRunoffTitle: "El Escrutinio · Segunda Vuelta",
+  bulletin: (n, percent) => (percent === null ? `Preconteo · Boletín ${n}` : `Preconteo · Boletín ${n} · ${percent}%`),
+  finalBulletin: "Boletín final · 100% de los recintos reportando",
+  bursts: { battle: "¡ZAS!", scandal: "¡EXPUESTO!", effect: "¡A LA EMBAJADA!", "spent-scandal": "¡ESCÁNDALO!" },
+  palace: "el Palacio",
+  finale: {
+    election: {
+      won: {
+        headline: "¡ARRASÓ!",
+        deck: "Ganaste la Noche Electoral. Las llaves del Palacio son tuyas -- tu rival fue nombrado embajador en algún lugar muy, muy lejano.",
+      },
+      lost: { headline: "DERROTADO EN LAS URNAS", deck: "Los votantes han hablado. Un puesto diplomático en la Embajada te espera." },
+    },
+    runoff: {
+      won: { headline: "¡VICTORIA EN LA SEGUNDA VUELTA!", deck: "Un final fotográfico -- y la foto eres tú, saludando desde el balcón del Palacio." },
+      lost: { headline: "PERDIÓ EN LA SEGUNDA VUELTA", deck: "Tan cerca. Se pidió un reconteo; nadie espera que cambie nada." },
+    },
+    tiebreak: {
+      won: { headline: "EMPATE TÉCNICO... ¡GANA EL RÉCORD MÁS LIMPIO!", deck: "Un empate técnico, decidido por tu récord más limpio: menos cartas en la Embajada." },
+      lost: { headline: "EMPATE TÉCNICO: HUNDIDO POR SU RÉCORD", deck: "Un empate técnico -- y tu historial más largo en la Embajada te costó caro." },
+    },
+    mandate: {
+      won: { headline: "¡EL RIVAL RENUNCIA!", deck: "Sin Mandato que perder, tu rival anunció que pasará más tiempo con su familia." },
+      lost: { headline: "OBLIGADO A RENUNCIAR", deck: "Tu Mandato llegó a cero. Siempre habrá un pódcast que te quiera." },
+    },
+    "deck-out": {
+      won: { headline: "¡AL RIVAL SE LE ACABÓ LA CAMPAÑA!", deck: "Sin cartas, sin ideas, fuera de la contienda." },
+      lost: { headline: "SIN CAMPAÑA, SIN VOTOS", deck: "Te quedaste sin cartas antes de quedarte sin promesas." },
     },
   },
 };
 
 const FLAVORS: Record<Edition, Flavor> = { world: WORLD, colombia: COLOMBIA };
+const FLAVORS_ES: Record<Edition, Flavor> = { world: WORLD_ES, colombia: COLOMBIA };
 
 let current: Edition = "world";
 
@@ -134,9 +189,9 @@ export function setEdition(edition: Edition | undefined): void {
 }
 
 export function flavor(): Flavor {
-  return FLAVORS[current];
+  return flavorOf(current);
 }
 
 export function flavorOf(edition: Edition): Flavor {
-  return FLAVORS[edition];
+  return (locale() === "es" ? FLAVORS_ES : FLAVORS)[edition];
 }

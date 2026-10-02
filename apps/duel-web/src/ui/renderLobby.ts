@@ -3,12 +3,13 @@ import type { GameClient } from "../net/GameClient";
 import type { AppActions } from "./renderApp";
 import { el } from "./dom";
 import { flavorOf, setEdition } from "./flavor";
-import { GAME_NAME, GAME_TAGLINE } from "./brand";
+import { GAME_NAME, gameTagline } from "./brand";
+import { t, tf } from "../i18n";
 
 export function renderLobby(state: ClientState, client: GameClient, actions: AppActions): HTMLElement {
   const roomInput = el("input", {
     type: "text",
-    placeholder: "ROOM CODE",
+    placeholder: t("lobby.roomCodePlaceholder"),
     value: state.roomCodeInput,
     maxLength: 5,
   });
@@ -27,33 +28,33 @@ export function renderLobby(state: ClientState, client: GameClient, actions: App
   // just hide those while a search is in flight.
   const quickMatchSection = state.quickMatchWaiting
     ? el("div", { className: "quickmatch-panel quickmatch-panel--waiting" }, [
-        el("p", { className: "quickmatch-status" }, ["Looking for an opponent…"]),
-        el("p", { className: "subtitle" }, ["Nobody around? You'll duel the computer in a few seconds."]),
-        el("button", { onclick: () => actions.cancelQuickMatch() }, ["Cancel"]),
+        el("p", { className: "quickmatch-status" }, [t("lobby.quickMatch.waitingStatus")]),
+        el("p", { className: "subtitle" }, [t("lobby.quickMatch.waitingSubtitle")]),
+        el("button", { onclick: () => actions.cancelQuickMatch() }, [t("common.cancel")]),
       ])
     : el("div", { className: "quickmatch-panel" }, [
-        el("h2", { className: "menu-heading" }, ["Quick Match"]),
-        el("p", { className: "subtitle" }, ["Get matched with whoever's online right now -- no code needed."]),
+        el("h2", { className: "menu-heading" }, [t("lobby.quickMatch.heading")]),
+        el("p", { className: "subtitle" }, [t("lobby.quickMatch.subtitle")]),
         el("div", { className: "edition-row" }, [
           el(
             "button",
             {
               className: "primary",
               disabled: !state.connectionOpen,
-              title: "The global base game: world leaders, in English.",
+              title: t("lobby.quickMatch.worldTitle"),
               onclick: () => actions.startQuickMatch("world"),
             },
-            [`Quick Match · ${flavorOf("world").editionName}`],
+            [tf("lobby.quickMatch.button", { edition: flavorOf("world").editionName })],
           ),
           el(
             "button",
             {
               className: "edition-special",
               disabled: !state.connectionOpen,
-              title: "Special edition: the original Colombian cards (La Embajada, Titulares...).",
+              title: t("lobby.quickMatch.colombiaTitle"),
               onclick: () => actions.startQuickMatch("colombia"),
             },
-            [`Quick Match · ${flavorOf("colombia").editionName}`],
+            [tf("lobby.quickMatch.button", { edition: flavorOf("colombia").editionName })],
           ),
         ]),
       ]);
@@ -61,32 +62,32 @@ export function renderLobby(state: ClientState, client: GameClient, actions: App
   const friendSection = state.quickMatchWaiting
     ? null
     : el("div", { className: "lobby-friend-panel" }, [
-        el("h2", { className: "menu-heading" }, ["Play a Friend"]),
+        el("h2", { className: "menu-heading" }, [t("lobby.friend.heading")]),
         el("div", { className: "edition-row" }, [
           el(
             "button",
             {
               disabled: !state.connectionOpen,
-              title: "The global base game: world leaders, in English.",
+              title: t("lobby.quickMatch.worldTitle"),
               onclick: () => {
                 setEdition("world");
                 client.createRoom("world");
               },
             },
-            [`Create a Room · ${flavorOf("world").editionName}`],
+            [tf("lobby.friend.createRoom", { edition: flavorOf("world").editionName })],
           ),
           el(
             "button",
             {
               className: "edition-special",
               disabled: !state.connectionOpen,
-              title: "Special edition: the original Colombian cards (La Embajada, Titulares...).",
+              title: t("lobby.quickMatch.colombiaTitle"),
               onclick: () => {
                 setEdition("colombia");
                 client.createRoom("colombia");
               },
             },
-            [`Special: ${flavorOf("colombia").editionName}`],
+            [tf("lobby.friend.special", { edition: flavorOf("colombia").editionName })],
           ),
         ]),
         el("div", { className: "join-row" }, [
@@ -102,22 +103,22 @@ export function renderLobby(state: ClientState, client: GameClient, actions: App
                 }
               },
             },
-            ["Join"],
+            [t("lobby.friend.join")],
           ),
         ]),
       ]);
 
   return el("div", {}, [
     el("h1", { className: "brand-name" }, [GAME_NAME]),
-    el("p", { className: "subtitle" }, [GAME_TAGLINE]),
+    el("p", { className: "subtitle" }, [gameTagline()]),
     el("div", { className: "lobby-panel" }, [
       state.statusLine ? el("p", { className: "status-line" }, [state.statusLine]) : null,
       quickMatchSection,
       friendSection,
       !state.connectionOpen && !state.statusLine
-        ? el("p", { className: "subtitle" }, ["Connecting to server..."])
+        ? el("p", { className: "subtitle" }, [t("lobby.connecting")])
         : null,
-      el("button", { className: "lobby-back", onclick: () => actions.backToMenu() }, ["Back to menu"]),
+      el("button", { className: "lobby-back", onclick: () => actions.backToMenu() }, [t("lobby.backToMenu")]),
     ]),
   ]);
 }

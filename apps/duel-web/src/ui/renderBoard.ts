@@ -18,6 +18,8 @@ import type {
 } from "@duel-for-the-world/duel-server";
 import type { ClientState, Interaction } from "../state/ClientState";
 import type { GameClient } from "../net/GameClient";
+import { t, tf } from "../i18n";
+import { localizedCardName } from "../i18n/cardText";
 import { noteFieldInstance, noteHand, renderCardBack, renderCardFace } from "./cardView";
 import { el } from "./dom";
 import { makeDraggable, makeDropTarget } from "./dragDrop";
@@ -35,11 +37,13 @@ import { fitStage, isPhoneLayout, STAGE_HEIGHT } from "./stage";
 const SLOT_CARD_SCALE = 0.72;
 const BACKROOM_CARD_SCALE = 0.5;
 
-// The three ways to put an Actor on the field, Yu-Gi-Oh style.
-const ACTOR_PLAYS: Array<{ label: string; stance: ActorStance; facing: ActorFacing; primary?: boolean }> = [
-  { label: "Deploy -- Campaign", stance: "campaign", facing: "face-up", primary: true },
-  { label: "Deploy -- Resistance", stance: "resistance", facing: "face-up" },
-  { label: "Set face-down", stance: "resistance", facing: "face-down" },
+// The three ways to put an Actor on the field, Yu-Gi-Oh style. `action` is
+// a stable id (never translated) the tutorial matches against via
+// data-guide-action -- see menuButton() and guide/coach.ts's elementsFor().
+const ACTOR_PLAYS: Array<{ labelKey: string; action: string; stance: ActorStance; facing: ActorFacing; primary?: boolean }> = [
+  { labelKey: "board.actorPlay.deployCampaign", action: "deploy-campaign", stance: "campaign", facing: "face-up", primary: true },
+  { labelKey: "board.actorPlay.deployResistance", action: "deploy-resistance", stance: "resistance", facing: "face-up" },
+  { labelKey: "board.setFaceDown", action: "set-face-down", stance: "resistance", facing: "face-down" },
 ];
 
 // Each field Actor's stance as of the last render, so a stance change can
@@ -130,10 +134,10 @@ function renderDuelistStrip(
     el("div", { className: "duelist-info" }, [
       el("strong", {}, [label]),
       el("span", { className: "tag" }, [
-        `Hand ${view.handCount} · Deck ${view.deckCount} · ${flavor().embassy} ${view.archive.length}`,
+        tf("board.duelistTag", { hand: String(view.handCount), deck: String(view.deckCount), embassy: flavor().embassy, count: String(view.archive.length) }),
       ]),
     ]),
-    el("div", { className: "duelist-right" }, [action, el("div", { className: "mandate" }, [`${view.mandate} Mandate`])]),
+    el("div", { className: "duelist-right" }, [action, el("div", { className: "mandate" }, [tf("board.mandateTag", { mandate: String(view.mandate) })])]),
   ]);
   strip.dataset.duelist = view.id;
   return strip;
@@ -164,14 +168,14 @@ function renderActorCardFace(actor: PublicFieldActor, options: ActorCardOptions)
   const entering = noteFieldInstance(actor.instanceId);
 
   if (actor.cardId === null) {
-    return renderCardBack("Face-down", { entering, equips: actor.equippedPolicyIds });
+    return renderCardBack(t("board.cardBack.faceDown"), { entering, equips: actor.equippedPolicyIds });
   }
 
   const status = [
-    actor.stance === "campaign" ? "Campaign" : "Resistance",
-    actor.hasAttackedThisTurn ? "attacked" : null,
-    actor.hasChangedStanceThisTurn ? "stance changed" : null,
-    options.currentTurn !== undefined && actor.turnDeployed === options.currentTurn ? "just deployed" : null,
+    actor.stance === "campaign" ? t("board.status.campaign") : t("board.status.resistance"),
+    actor.hasAttackedThisTurn ? t("board.status.attacked") : null,
+    actor.hasChangedStanceThisTurn ? t("board.status.stanceChanged") : null,
+    options.currentTurn !== undefined && actor.turnDeployed === options.currentTurn ? t("board.status.justDeployed") : null,
   ]
     .filter(Boolean)
     .join(" · ");
@@ -192,7 +196,7 @@ function renderScandalCard(scandal: PublicFieldScandal): HTMLElement {
   const entering = noteFieldInstance(scandal.instanceId);
   return tagInstance(
     scandal.cardId === null
-      ? renderCardBack("Set", { entering })
+      ? renderCardBack(t("board.cardBack.set"), { entering })
       : renderCardFace(scandal.cardId, { hiddenFromOpponent: true, entering }),
     scandal.instanceId,
   );
@@ -216,7 +220,7 @@ function renderPolicyCardFace(
 ): HTMLElement {
   const entering = noteFieldInstance(policy.instanceId);
   if (policy.cardId === null) {
-    return renderCardBack("Set", { entering });
+    return renderCardBack(t("board.cardBack.set"), { entering });
   }
   if (policy.faceDown) {
     return renderCardFace(policy.cardId, {
@@ -227,16 +231,16 @@ function renderPolicyCardFace(
     });
   }
   const equipped = allActors.find((actor) => actor.instanceId === policy.equippedToInstanceId);
-  const name = equipped?.cardId ? CARDS[equipped.cardId].name : "a face-down Actor";
+  const name = equipped?.cardId ? localizedCardName(equipped.cardId, CARDS[equipped.cardId].name) : t("board.aFaceDownActor");
   // A hostile equip sits in one player's Backroom but on the other
   // player's Actor: say whose.
   const whose =
     equipped && equipped.controllerId !== policy.controllerId
       ? equipped.controllerId === you
-        ? "your "
-        : "their "
+        ? t("board.yourPossessive")
+        : t("board.theirPossessive")
       : "";
-  return renderCardFace(policy.cardId, { entering, status: `Equipped to ${whose}${name}` });
+  return renderCardFace(policy.cardId, { entering, status: tf("board.equippedTo", { whose, name }) });
 }
 
 /**
@@ -258,7 +262,7 @@ function renderSlot(
   return el("div", { className: classes.filter(Boolean).join(" ") }, [
     card
       ? el("div", { className: cardClasses.filter(Boolean).join(" ") }, [card])
-      : el("div", { className: "slot-label" }, [kind === "actor" ? "Actor" : "Backroom"]),
+      : el("div", { className: "slot-label" }, [kind === "actor" ? t("board.zoneLabel.actor") : t("board.zoneLabel.backroom")]),
     options.extra ?? null,
   ]);
 }
@@ -281,27 +285,34 @@ function renderAttackOdds(atk: number, target: PublicFieldActor, runoff: boolean
   let text: string;
   if (target.cardId === null) {
     kind = "unknown";
-    text = "Face-down: ?";
+    text = t("board.attackOdds.faceDown");
   } else if (target.stance === "campaign") {
     const diff = atk - target.atk;
     kind = diff > 0 ? "win" : diff < 0 ? "lose" : "even";
-    text = diff > 0 ? `Wins · ${diff * multiplier} damage` : diff < 0 ? "You lose it" : "Both fall";
+    text = diff > 0 ? tf("board.attackOdds.winsDamage", { damage: String(diff * multiplier) }) : diff < 0 ? t("board.attackOdds.youLoseIt") : t("board.attackOdds.bothFall");
   } else {
     const diff = atk - target.def;
     kind = diff > 0 ? "win" : diff < 0 ? "lose" : "even";
-    text = diff > 0 ? "Wins · no damage" : diff < 0 ? "You lose it" : "Nothing happens";
+    text = diff > 0 ? t("board.attackOdds.winsNoDamage") : diff < 0 ? t("board.attackOdds.youLoseIt") : t("board.attackOdds.nothingHappens");
   }
   return el("div", { className: `attack-odds attack-odds--${kind}` }, [text]);
 }
 
 // --- Menus -----------------------------------------------------------------
 
+// `guideAction`: a stable (untranslated) id matching guide/script.ts's
+// `{ kind: "menu", action }` targets -- set as a data attribute rather
+// than matched against the (translatable) label text, so the tutorial's
+// highlight never breaks when the label is shown in Spanish. el()'s
+// Object.assign can't set .dataset directly (it's a read-only getter on
+// the element), so it's set on the returned button afterwards, same
+// pattern as .dataset.cardId elsewhere in this file.
 function menuButton(
   label: string,
   onClick: () => void,
-  options: { primary?: boolean; disabled?: boolean } = {},
+  options: { primary?: boolean; disabled?: boolean; guideAction?: string } = {},
 ): HTMLButtonElement {
-  return el(
+  const button = el(
     "button",
     {
       className: options.primary ? "primary" : "",
@@ -313,6 +324,8 @@ function menuButton(
     },
     [label],
   );
+  if (options.guideAction) button.dataset.guideAction = options.guideAction;
+  return button;
 }
 
 function renderMenu(
@@ -326,7 +339,7 @@ function renderMenu(
     el("div", { className: "menu-title" }, [title]),
     note ? el("div", { className: "menu-note" }, [note]) : null,
     ...buttons,
-    menuButton("Cancel", onCancel),
+    menuButton(t("common.cancel"), onCancel),
   ]);
 }
 
@@ -336,17 +349,19 @@ function renderMenu(
 function renderElectionChip(turnNumber: number, election: { turn: number; runoff: boolean }): HTMLElement {
   const left = Math.max(0, election.turn - turnNumber + 1);
   const text = election.runoff
-    ? `${flavor().runoff} · damage ×${RUNOFF_DAMAGE_MULTIPLIER} · ${left === 1 ? "final turn" : `${left} turns`}`
+    ? tf("board.election.runoffLine", {
+        runoff: flavor().runoff,
+        mult: String(RUNOFF_DAMAGE_MULTIPLIER),
+        turns: left === 1 ? t("board.election.finalTurn") : tf("board.election.turnsLeft", { n: String(left) }),
+      })
     : left === 1
-      ? "🗳 Votes counted this turn!"
-      : `🗳 Election in ${left} turns`;
+      ? t("board.election.votesCountedNow")
+      : tf("board.election.inTurns", { n: String(left) });
   return el(
     "span",
     {
       className: `election-chip${election.runoff ? " election-chip--runoff" : ""}${left <= 2 ? " election-chip--close" : ""}`,
-      title:
-        `When turn ${election.turn} ends, votes are counted: Mandate + ATK of your Campaign Actors + bonus votes. ` +
-        `A lead of more than ${RUNOFF_MARGIN} wins; closer than that goes to a runoff.`,
+      title: tf("board.election.tooltip", { turn: String(election.turn), margin: String(RUNOFF_MARGIN) }),
     },
     [text],
   );
@@ -368,10 +383,16 @@ function renderPoll(
     "span",
     {
       className: "poll",
-      title:
-        `Live poll -- votes if the election were held now (Mandate + ATK in Campaign + bonus votes).\n` +
-        `You: ${mine.mandate} + ${mine.campaign} + ${mine.bonus ?? 0} = ${mine.total}\n` +
-        `Opponent: ${theirs.mandate} + ${theirs.campaign} + ${theirs.bonus ?? 0} = ${theirs.total}`,
+      title: tf("board.poll.tooltip", {
+        youM: String(mine.mandate),
+        youC: String(mine.campaign),
+        youB: String(mine.bonus ?? 0),
+        youT: String(mine.total),
+        oppM: String(theirs.mandate),
+        oppC: String(theirs.campaign),
+        oppB: String(theirs.bonus ?? 0),
+        oppT: String(theirs.total),
+      }),
     },
     [
       el("span", { className: "poll-num poll-num--you" }, [String(mine.total)]),
@@ -387,16 +408,16 @@ function renderLeaveButton(state: ClientState, rerender: () => void, actions: { 
   const over = state.duel?.winnerId !== null && state.duel?.winnerId !== undefined;
   if (confirmingLeave && !over) {
     return el("span", { className: "leave-confirm" }, [
-      "Leave this duel?",
-      el("button", { className: "danger", onclick: () => { confirmingLeave = false; actions.backToMenu(); } }, ["Leave"]),
-      el("button", { onclick: () => { confirmingLeave = false; rerender(); } }, ["Stay"]),
+      t("board.leave.confirm"),
+      el("button", { className: "danger", onclick: () => { confirmingLeave = false; actions.backToMenu(); } }, [t("board.leave.leave")]),
+      el("button", { onclick: () => { confirmingLeave = false; rerender(); } }, [t("board.leave.stay")]),
     ]);
   }
   return el(
     "button",
     {
       className: "leave-button",
-      ariaLabel: "Back to the main menu",
+      ariaLabel: t("board.leave.ariaLabel"),
       onclick: () => {
         if (over) {
           actions.backToMenu();
@@ -406,7 +427,7 @@ function renderLeaveButton(state: ClientState, rerender: () => void, actions: { 
         rerender();
       },
     },
-    ["☰ Menu"],
+    [t("board.leave.menu")],
   );
 }
 
@@ -423,9 +444,9 @@ export function renderBoard(
       el("h1", { className: "brand-name" }, [GAME_NAME]),
       el("p", { className: "subtitle" }, [flavor().editionName]),
       el("div", { className: "lobby-panel" }, [
-        state.roomCode ? el("p", {}, [`Room code: ${state.roomCode}`]) : null,
-        el("p", { className: "subtitle" }, [state.mode === "online" ? "Waiting for an opponent to join..." : "Dealing the cards..."]),
-        el("button", { className: "lobby-back", onclick: () => actions.backToMenu() }, ["Back to menu"]),
+        state.roomCode ? el("p", {}, [tf("board.roomCode", { code: state.roomCode })]) : null,
+        el("p", { className: "subtitle" }, [state.mode === "online" ? t("board.waitingOpponent") : t("board.dealingCards")]),
+        el("button", { className: "lobby-back", onclick: () => actions.backToMenu() }, [t("lobby.backToMenu")]),
       ]),
     ]);
   }
@@ -463,11 +484,11 @@ export function renderBoard(
   // allowed right now, or null. The server enforces the same rules.
   const stanceChangeBlock = (actor: PublicFieldActor): string | null =>
     actor.turnDeployed === duel.turnNumber
-      ? "Deployed this turn -- it can change stance from your next turn."
+      ? t("board.block.deployedThisTurn")
       : actor.hasAttackedThisTurn
-        ? "It already attacked this turn."
+        ? t("board.block.alreadyAttacked")
         : actor.hasChangedStanceThisTurn
-          ? "It already changed stance this turn."
+          ? t("board.block.alreadyChangedStance")
           : null;
 
   // A card dropped onto one of your zones (or an equip being aimed after
@@ -495,7 +516,7 @@ export function renderBoard(
 
   const activateLabel = (cardId: PolicyCardId): string => {
     const side = targetSideOf(cardId);
-    return side === null ? "Activate" : side === "your-actor" ? "Activate -- pick your Actor" : "Activate -- pick an opposing Actor";
+    return side === null ? t("board.activate.plain") : side === "your-actor" ? t("board.activate.pickYourActor") : t("board.activate.pickOpposingActor");
   };
 
   // Why a Policy can't be activated right now for lack of targets, or null.
@@ -504,9 +525,7 @@ export function renderBoard(
     // A retrieval Policy needs something in the Embassy to bring back.
     if (side === null) return retrievalBlock(duel, you, cardId);
     if (targetsOn(side).length > 0) return null;
-    return side === "your-actor"
-      ? "You have no Actors to target -- you can still Set it for later."
-      : "Your opponent has no Actors to target -- you can still Set it for later.";
+    return side === "your-actor" ? t("board.noTarget.yourActor") : t("board.noTarget.opponentActor");
   };
 
   type PolicySource = { kind: "hand"; handIndex: number; zone?: number } | { kind: "set"; instanceId: number };
@@ -580,20 +599,20 @@ export function renderBoard(
     if (placing.zoneKind === "actor" && isActor(cardId)) {
       const tribute = yourView.field.find((actor) => actor.instanceId === placing.tributeInstanceId);
       // Warn that anything equipped to the tributed Actor leaves with it.
-      const lost = tribute ? tribute.equippedPolicyIds.map((id) => CARDS[id].name) : [];
+      const lost = tribute ? tribute.equippedPolicyIds.map((id) => localizedCardName(id, CARDS[id].name)) : [];
       const note = tribute
-        ? `Tributes ${tribute.cardId ? CARDS[tribute.cardId].name : "your face-down Actor"}.` +
-          (lost.length > 0 ? ` ${lost.join(" and ")} goes to ${flavor().embassyThe} with it.` : "")
+        ? tf("board.tribute.note", { name: tribute.cardId ? localizedCardName(tribute.cardId, CARDS[tribute.cardId].name) : t("board.tribute.faceDownFallback") }) +
+          (lost.length > 0 ? tf("board.tribute.lossSuffix", { names: lost.join(` ${t("board.join.and")} `), embassyThe: flavor().embassyThe }) : "")
         : null;
       return renderMenu(
         "zone-menu",
-        CARDS[cardId].name,
+        localizedCardName(cardId, CARDS[cardId].name),
         note,
         playsFor(cardId).map((play) =>
           menuButton(
-            play.label,
+            t(play.labelKey),
             () => deploy(cardId, { stance: play.stance, facing: play.facing, zone, tributeInstanceId: placing.tributeInstanceId }, commit),
-            { primary: play.primary },
+            { primary: play.primary, guideAction: play.action },
           ),
         ),
         idle,
@@ -604,18 +623,18 @@ export function renderBoard(
       const blocked = noTargetNote(cardId);
       return renderMenu(
         "zone-menu",
-        CARDS[cardId].name,
+        localizedCardName(cardId, CARDS[cardId].name),
         blocked,
         [
           menuButton(
             activateLabel(cardId),
             () => startPolicy(cardId, { kind: "hand", handIndex, zone }, commit),
-            { primary: true, disabled: blocked !== null },
+            { primary: true, disabled: blocked !== null, guideAction: "activate" },
           ),
-          menuButton("Set face-down", () => {
+          menuButton(t("board.setFaceDown"), () => {
             client.sendAction({ type: "set-policy", policyCardId: cardId, zone });
             commit();
-          }),
+          }, { guideAction: "set-face-down" }),
         ],
         idle,
       );
@@ -643,7 +662,7 @@ export function renderBoard(
         if (canAct && inConfrontation) {
           makeDropTarget(slot, {
             accepts: (payload) => payload.kind === "field-actor",
-            label: () => "Attack!",
+            label: () => t("board.drop.attack"),
             landScale: SLOT_CARD_SCALE,
             onDrop: (payload) => {
               if (payload.kind === "field-actor") attack(payload.instanceId, actor.instanceId);
@@ -701,7 +720,7 @@ export function renderBoard(
     if (canAct && inConfrontation) {
       makeDropTarget(opponentSide, {
         accepts: (payload) => payload.kind === "field-actor",
-        label: () => "Direct attack!",
+        label: () => t("board.drop.directAttack"),
         onDrop: (payload) => {
           if (payload.kind === "field-actor") attack(payload.instanceId);
         },
@@ -745,7 +764,7 @@ export function renderBoard(
               canDeployNow &&
               isActor(payload.cardId) &&
               !isEstablishment(payload.cardId),
-            label: () => "Deploy",
+            label: () => t("board.drop.deploy"),
             landScale: SLOT_CARD_SCALE,
             onDrop: (payload) => {
               if (payload.kind !== "hand-card") return;
@@ -788,19 +807,19 @@ export function renderBoard(
       if (actorMenuFor === actor.instanceId && actor.cardId !== null) {
         const blocked =
           actor.stance === "campaign" && isCampaignOnly(actor.cardId)
-            ? "This Leader never retreats: it can't go into Resistance."
+            ? t("board.leaderNeverRetreats")
             : stanceChangeBlock(actor);
         // Campaign Phase 1 is followed by Confrontation; Campaign Phase 2 isn't.
-        const attackWhen = duel.phase === "campaign-1" ? "this turn" : "from your next turn";
-        const [label, hint] =
+        const attackWhen = duel.phase === "campaign-1" ? t("board.attackWhen.thisTurn") : t("board.attackWhen.fromNextTurn");
+        const [label, hint, guideAction] =
           actor.stance === "campaign"
-            ? ["Switch to Resistance", `Turns sideways: defends with DEF ${actor.def} and can't attack.`]
+            ? [t("board.stance.toResistance.label"), tf("board.stance.toResistance.hint", { def: String(actor.def) }), "to-resistance"]
             : actor.facing === "face-down"
-              ? ["Flip face-up -- Campaign", `Reveals it to your opponent. It can attack ${attackWhen}.`]
-              : ["Switch to Campaign", `Stands up: can attack with ATK ${actor.atk} ${attackWhen}.`];
+              ? [t("board.stance.flipCampaign.label"), tf("board.stance.flipCampaign.hint", { when: attackWhen }), "flip-campaign"]
+              : [t("board.stance.toCampaign.label"), tf("board.stance.toCampaign.hint", { atk: String(actor.atk), when: attackWhen }), "to-campaign"];
         actorMenu = renderMenu(
           "zone-menu",
-          CARDS[actor.cardId].name,
+          localizedCardName(actor.cardId, CARDS[actor.cardId].name),
           blocked ?? hint,
           [
             menuButton(
@@ -813,7 +832,7 @@ export function renderBoard(
                   idle();
                 });
               },
-              { primary: true, disabled: blocked !== null },
+              { primary: true, disabled: blocked !== null, guideAction },
             ),
           ],
           idle,
@@ -838,7 +857,7 @@ export function renderBoard(
             canDeployNow &&
             isEstablishment(payload.cardId) &&
             !(isLeader(payload.cardId) && leaderInOffice !== null && leaderInOffice !== actor),
-          label: () => "Tribute",
+          label: () => t("board.drop.tribute"),
           landScale: SLOT_CARD_SCALE,
           onDrop: (payload) => {
             if (payload.kind !== "hand-card") return;
@@ -912,7 +931,7 @@ export function renderBoard(
           const blocked = noTargetNote(policyCardId);
           menu = renderMenu(
             "zone-menu",
-            CARDS[policyCardId].name,
+            localizedCardName(policyCardId, CARDS[policyCardId].name),
             blocked,
             [
               menuButton(
@@ -934,7 +953,7 @@ export function renderBoard(
         makeDropTarget(slot, {
           accepts: (payload) =>
             payload.kind === "hand-card" && ((isScandal(payload.cardId) && canSetScandalNow) || isPolicy(payload.cardId)),
-          label: (payload) => (payload.kind === "hand-card" && isScandal(payload.cardId) ? "Set face-down" : "Play here"),
+          label: (payload) => (payload.kind === "hand-card" && isScandal(payload.cardId) ? t("board.setFaceDown") : t("board.drop.playHere")),
           landScale: BACKROOM_CARD_SCALE,
           onDrop: (payload) => {
             if (payload.kind !== "hand-card") return;
@@ -973,26 +992,26 @@ export function renderBoard(
   // --- Middle banner: phase, or what you're being asked to pick -----------
 
   const selectionPrompt = choosingTribute
-    ? `Choose one of your Actors to tribute for ${CARDS[choosingTribute.cardId].name}.`
+    ? tf("board.prompt.tribute", { name: localizedCardName(choosingTribute.cardId, CARDS[choosingTribute.cardId].name) })
     : choosingPolicy
       ? choosingSide === "opponent-actor"
-        ? `Choose an opposing Actor for ${CARDS[choosingPolicy.cardId].name}.`
-        : `Choose one of your Actors for ${CARDS[choosingPolicy.cardId].name}.`
+        ? tf("board.prompt.pickOpposingActorFor", { name: localizedCardName(choosingPolicy.cardId, CARDS[choosingPolicy.cardId].name) })
+        : tf("board.prompt.pickYourActorFor", { name: localizedCardName(choosingPolicy.cardId, CARDS[choosingPolicy.cardId].name) })
       : choosingAttack
         ? opponentView.field.length === 0
-          ? "Click the opponent's side of the field to attack directly."
-          : "Choose an opposing Actor to attack."
+          ? t("board.prompt.clickToAttackDirect")
+          : t("board.prompt.chooseOpposingActor")
         : null;
 
   const middle = selectionPrompt
     ? el("div", { className: "selection-banner" }, [
         el("span", {}, [selectionPrompt]),
-        el("button", { className: "danger", onclick: idle }, ["Cancel"]),
+        el("button", { className: "danger", onclick: idle }, [t("common.cancel")]),
       ])
     : el("div", { className: "phase-banner" }, [
         renderElectionChip(duel.turnNumber, duel.election),
         el("span", { className: "phase-text" }, [
-          `Turn ${duel.turnNumber} · ${PHASE_LABELS[duel.phase]} · ${isYourTurn ? "Your turn" : "Opponent's turn"}`,
+          tf("board.turnLine", { n: String(duel.turnNumber), phase: PHASE_LABELS[duel.phase], whoseTurn: isYourTurn ? t("turnBanner.yourTurn") : t("board.opponentsTurn") }),
         ]),
         renderPoll(duel.polls, you, opponent),
       ]);
@@ -1015,18 +1034,18 @@ export function renderBoard(
     if (isActor(cardId)) {
       const establishment = isEstablishment(cardId);
       if (!canDeployNow) {
-        note = "You already deployed an Actor this turn.";
+        note = t("board.note.alreadyDeployed");
       } else if (establishment && yourView.field.length === 0) {
-        note = "Needs one of your Actors to tribute.";
+        note = t("board.note.needsTribute");
       } else if (!establishment && yourView.field.length >= ACTOR_ZONE_COUNT) {
-        note = "All your Actor zones are full.";
+        note = t("board.note.actorZonesFull");
       }
       // Only one Leader in office: a new one must tribute the old one.
       const replacing = isLeader(cardId) && leaderInOffice !== null;
       for (const play of playsFor(cardId)) {
         buttons.push(
           menuButton(
-            play.label,
+            t(play.labelKey),
             () => {
               if (replacing && leaderInOffice) {
                 // No choice to make: the Leader in office is the tribute.
@@ -1037,7 +1056,7 @@ export function renderBoard(
                 deploy(cardId, { stance: play.stance, facing: play.facing }, idle);
               }
             },
-            { primary: play.primary, disabled: note !== null },
+            { primary: play.primary, disabled: note !== null, guideAction: play.action },
           ),
         );
       }
@@ -1050,40 +1069,40 @@ export function renderBoard(
           activateLabel(cardId),
           () => startPolicy(cardId, { kind: "hand", handIndex }, idle),
           // An Equip needs a free Backroom zone to stay in.
-          { primary: true, disabled: blocked !== null || (isEquip(cardId) && backroomFull) },
+          { primary: true, disabled: blocked !== null || (isEquip(cardId) && backroomFull), guideAction: "activate" },
         ),
         menuButton(
-          "Set face-down",
+          t("board.setFaceDown"),
           () => {
             client.sendAction({ type: "set-policy", policyCardId: cardId });
             idle();
           },
-          { disabled: backroomFull },
+          { disabled: backroomFull, guideAction: "set-face-down" },
         ),
       );
-      if (backroomFull) note = "All your Backroom zones are full.";
+      if (backroomFull) note = t("board.note.backroomFull");
     } else if (isScandal(cardId)) {
       if (!canSetScandalNow) {
-        note = "You already Set a Scandal this turn.";
+        note = t("board.note.alreadySetScandal");
       } else if (yourView.setScandals.length + yourView.backroomPolicies.length >= BACKROOM_ZONE_COUNT) {
-        note = "All your Backroom zones are full.";
+        note = t("board.note.backroomFull");
       }
       buttons.push(
         menuButton(
-          "Set face-down",
+          t("board.setFaceDown"),
           () => {
             client.sendAction({ type: "set-scandal", scandalCardId: cardId });
             idle();
           },
-          { primary: true, disabled: note !== null },
+          { primary: true, disabled: note !== null, guideAction: "set-face-down" },
         ),
       );
     }
 
     if (note === null && isActor(cardId) && isLeader(cardId) && leaderInOffice?.cardId) {
-      note = `Replaces ${CARDS[leaderInOffice.cardId].name} (only one Leader in office).`;
+      note = tf("board.note.replaces", { name: localizedCardName(leaderInOffice.cardId, CARDS[leaderInOffice.cardId].name) });
     }
-    return renderMenu("hand-menu", CARDS[cardId].name, note, buttons, idle);
+    return renderMenu("hand-menu", localizedCardName(cardId, CARDS[cardId].name), note, buttons, idle);
   };
 
   const handRow = el(
@@ -1116,15 +1135,15 @@ export function renderBoard(
 
   const handHint = canAct
     ? inCampaign
-      ? "Drag a card onto a zone (then choose how to play it), or click it for its options."
+      ? t("board.hint.campaign")
       : inConfrontation
-        ? "Drag one of your Campaign Actors onto an opposing Actor to attack (or click it)."
-        : "Cards can be played during a Campaign Phase."
+        ? t("board.hint.confrontation")
+        : t("board.hint.otherwise")
     : null;
 
   const winnerBanner = gameOver
     ? el("div", { className: "winner-banner" }, [
-        duel.winnerId === you ? "You win the duel!" : "Your opponent wins the duel.",
+        duel.winnerId === you ? t("board.winner.you") : t("board.winner.opponent"),
         el(
           "button",
           {
@@ -1134,7 +1153,7 @@ export function renderBoard(
               rerender();
             },
           },
-          ["Results & rematch"],
+          [t("board.winner.resultsRematch")],
         ),
       ])
     : null;
@@ -1144,7 +1163,7 @@ export function renderBoard(
   // scrolling.
   const advanceButton = canAct
     ? el("button", { className: "primary advance-button", onclick: () => client.sendAction({ type: "advance-phase" }) }, [
-        "Advance Phase",
+        t("board.advancePhase"),
       ])
     : null;
 
@@ -1173,8 +1192,8 @@ export function renderBoard(
         "button",
         {
           className: "settings-button",
-          ariaLabel: "Settings",
-          title: "Settings",
+          ariaLabel: t("settings.heading"),
+          title: t("settings.heading"),
           onclick: () => {
             state.settingsOpen = true;
             rerender();
@@ -1186,8 +1205,8 @@ export function renderBoard(
       el("span", { className: "edition-tag" }, [flavor().editionName]),
       el("span", { className: "status-line" }, [
         state.aiThinking && !gameOver
-          ? "The computer is thinking..."
-          : (state.statusLine ?? (state.roomCode ? `Room ${state.roomCode}` : "")),
+          ? t("board.computerThinking")
+          : (state.statusLine ?? (state.roomCode ? tf("board.roomTag", { code: state.roomCode }) : "")),
       ]),
     ]),
     winnerBanner,
@@ -1196,9 +1215,9 @@ export function renderBoard(
     // The Headlines toast floats over the middle banner (see headlines.ts).
     el("div", { className: "middle" }, [middle, renderHeadlineToast(state)]),
     yourSide,
-    renderDuelistStrip(yourView, isYourTurn, "You", "you", advanceButton),
+    renderDuelistStrip(yourView, isYourTurn, t("finale.you"), "you", advanceButton),
     el("div", { className: "section-label" }, [
-      "Your Hand",
+      t("board.yourHand"),
       handHint ? el("span", { className: "hand-hint" }, [handHint]) : null,
     ]),
     handRow,

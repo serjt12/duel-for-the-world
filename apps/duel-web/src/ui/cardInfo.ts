@@ -1,5 +1,7 @@
 import { CARDS } from "@duel-for-the-world/duel-content";
 import type { CardId } from "@duel-for-the-world/duel-content";
+import { t } from "../i18n";
+import { localizedCardFlavor, localizedCardName } from "../i18n/cardText";
 
 export interface CardDisplay {
   name: string;
@@ -9,36 +11,36 @@ export interface CardDisplay {
   flavorText: string;
 }
 
-const TIER_LABEL = { grassroots: "Grassroots", establishment: "Establishment", leader: "Leader" } as const;
-
 export function describeCard(cardId: CardId): CardDisplay {
   const card = CARDS[cardId];
+  const name = localizedCardName(cardId, card.name);
+  const flavorText = localizedCardFlavor(cardId, card.flavorText);
 
   if (card.category === "actor") {
     return {
-      name: card.name,
+      name,
       category: "actor",
       statsLine: `ATK ${card.atk} / DEF ${card.def}`,
-      tagLine: `${TIER_LABEL[card.tier]} · ${card.role}`,
-      flavorText: card.flavorText,
+      tagLine: `${t(`tier.${card.tier}`)} · ${t(`role.${card.role}`)}`,
+      flavorText,
     };
   }
 
   if (card.category === "policy") {
     return {
-      name: card.name,
+      name,
       category: "policy",
       statsLine: null,
-      tagLine: `Policy · ${card.kind}`,
-      flavorText: card.flavorText,
+      tagLine: `${t("cardInfo.category.policy")} · ${t(`policyKind.${card.kind}`)}`,
+      flavorText,
     };
   }
 
   return {
-    name: card.name,
+    name,
     category: "scandal",
     statsLine: null,
-    tagLine: `Scandal · ${card.kind}`,
-    flavorText: card.flavorText,
+    tagLine: `${t("cardInfo.category.scandal")} · ${t(`scandalKind.${card.kind}`)}`,
+    flavorText,
   };
 }

@@ -45,8 +45,11 @@ export type GuideTarget =
   | { kind: "field"; side: "you" | "them"; cardId: CardId }
   // The opponent's face-down Set cards.
   | { kind: "their-set" }
-  // A button in the open card menu, by (the start of) its label.
-  | { kind: "menu"; label: string }
+  // A button in the open card menu, by its stable action id (set as
+  // data-guide-action on the button -- see ui/renderBoard.ts's
+  // menuButton() -- rather than by its translatable display label, so a
+  // language switch never breaks the glow/highlight matching).
+  | { kind: "menu"; action: string }
   | { kind: "advance" }
   | { kind: "mandate"; side: "you" | "them" }
   | { kind: "embassy"; side: "you" | "them" }
@@ -54,6 +57,9 @@ export type GuideTarget =
   | { kind: "election" };
 
 export type GuideStep = {
+  // i18n keys, resolved with t() at display time (guide/coach.ts) -- not
+  // literal text -- so an in-progress tutorial re-labels itself instantly
+  // on a language switch.
   title: string;
   text: string;
   targets?: GuideTarget[];
@@ -86,33 +92,33 @@ const at = (view: PublicDuelState, turn: number, phase: PublicDuelState["phase"]
   view.turnNumber === turn && view.phase === phase;
 const isAdvance = (action: PlayerAction): boolean => action.type === "advance-phase";
 
-function advanceTo(turn: number, phase: PublicDuelState["phase"], title: string, text: string): GuideStep {
+function advanceTo(turn: number, phase: PublicDuelState["phase"], titleKey: string, textKey: string): GuideStep {
   return {
     kind: "do",
-    title,
-    text,
+    title: titleKey,
+    text: textKey,
     targets: [{ kind: "advance" }],
     allow: isAdvance,
     done: (view) => at(view, turn, phase) || view.turnNumber > turn,
   };
 }
 
-function endTurn(turn: number, text: string): GuideStep {
+function endTurn(turn: number, textKey: string): GuideStep {
   return {
     kind: "do",
-    title: "End your turn",
-    text,
+    title: "guideStep.endTurn.title",
+    text: textKey,
     targets: [{ kind: "advance" }],
     allow: isAdvance,
     done: (view) => view.turnNumber > turn,
   };
 }
 
-function watch(turn: number, text: string): GuideStep {
+function watch(turn: number, textKey: string): GuideStep {
   return {
     kind: "watch",
-    title: "The computer's turn",
-    text,
+    title: "guideStep.computersTurn.title",
+    text: textKey,
     done: (view) => view.turnNumber > turn && yourTurn(view),
   };
 }
@@ -140,58 +146,48 @@ function attacks(action: PlayerAction, view: PublicDuelState, attacker: CardId, 
 export const GUIDE_STEPS: GuideStep[] = [
   {
     kind: "next",
-    button: "Let's go",
-    title: "Welcome to Duel for the World",
-    text:
-      "Two politicians, one Palace. Win by knocking your rival's Mandate down to 0, " +
-      "or by leading the count on Election Night. This short duel shows you how.",
+    button: "guideStep.s0.button",
+    title: "guideStep.s0.title",
+    text: "guideStep.s0.text",
     targets: [{ kind: "mandate", side: "you" }, { kind: "mandate", side: "them" }],
   },
-  advanceTo(1, "campaign-1", "Phases", "A turn has phases. You're in the Agenda. Tap Advance Phase to reach Campaign 1, where you play cards."),
+  advanceTo(1, "campaign-1", "guideStep.s1.title", "guideStep.s1.text"),
   {
     kind: "do",
-    title: "Deploy an Actor",
-    text: "Tap The Protester in your hand, then choose Deploy -- Campaign. (You can also drag it onto an Actor zone.)",
-    targets: [{ kind: "hand", cardId: "protester" }, { kind: "menu", label: "Deploy -- Campaign" }],
+    title: "guideStep.s2.title",
+    text: "guideStep.s2.text",
+    targets: [{ kind: "hand", cardId: "protester" }, { kind: "menu", action: "deploy-campaign" }],
     allow: (action) => deploys(action, "protester", "campaign"),
     done: (view) => actorOf(view, GUIDE_YOU, "protester") !== undefined,
   },
   {
     kind: "next",
-    title: "Campaign stance",
-    text:
-      "Upright means Campaign: it can attack, and its ATK counts as votes. " +
-      "The live poll in the middle shows the count right now. You get one deploy per turn.",
+    title: "guideStep.s3.title",
+    text: "guideStep.s3.text",
     targets: [{ kind: "field", side: "you", cardId: "protester" }, { kind: "poll" }],
   },
-  endTurn(1, "A new Actor can't attack on its first turn. Tap Advance Phase until your turn ends."),
-  watch(1, "Watch what the computer plays."),
+  endTurn(1, "guideStep.s4.text"),
+  watch(1, "guideStep.s5.text"),
   {
     kind: "next",
-    title: "Ouch: 2 Mandate",
-    text:
-      "Their Talk-Show Host cost you 2 Mandate the moment it arrived. " +
-      "Long-press any card (right-click on a computer) to read it in full.",
+    title: "guideStep.s6.title",
+    text: "guideStep.s6.text",
     targets: [{ kind: "field", side: "them", cardId: "talk-show-host" }, { kind: "mandate", side: "you" }],
   },
-  advanceTo(3, "campaign-1", "Your turn", "You drew a card. Advance to Campaign 1."),
+  advanceTo(3, "campaign-1", "guideStep.s7.title", "guideStep.s7.text"),
   {
     kind: "do",
-    title: "Resistance stance",
-    text:
-      "Deploy The Riot Cop with Deploy -- Resistance. Sideways, it defends with its DEF (6), " +
-      "and no Mandate damage gets through it.",
-    targets: [{ kind: "hand", cardId: "riot-cop" }, { kind: "menu", label: "Deploy -- Resistance" }],
+    title: "guideStep.s8.title",
+    text: "guideStep.s8.text",
+    targets: [{ kind: "hand", cardId: "riot-cop" }, { kind: "menu", action: "deploy-resistance" }],
     allow: (action) => deploys(action, "riot-cop", "resistance"),
     done: (view) => actorOf(view, GUIDE_YOU, "riot-cop") !== undefined,
   },
-  advanceTo(3, "confrontation", "Time to fight", "Advance to the Confrontation phase."),
+  advanceTo(3, "confrontation", "guideStep.s9.title", "guideStep.s9.text"),
   {
     kind: "do",
-    title: "Attack!",
-    text:
-      "Tap your Protester (ATK 4), then their Talk-Show Host (ATK 3). " +
-      "Higher ATK wins, and the loser's owner loses the difference.",
+    title: "guideStep.s10.title",
+    text: "guideStep.s10.text",
     targets: [
       { kind: "field", side: "you", cardId: "protester" },
       { kind: "field", side: "them", cardId: "talk-show-host" },
@@ -201,60 +197,50 @@ export const GUIDE_STEPS: GuideStep[] = [
   },
   {
     kind: "next",
-    title: "Off to the Embassy",
-    text:
-      "The Host was sent to the Embassy: the discard pile. Both Embassies are public; tap one to look inside. " +
-      "Careful: some cards bring Actors back from there.",
+    title: "guideStep.s11.title",
+    text: "guideStep.s11.text",
     targets: [{ kind: "embassy", side: "them" }, { kind: "mandate", side: "them" }],
   },
-  advanceTo(3, "campaign-2", "Campaign 2", "Advance to Campaign 2. You can still play cards after the fighting."),
+  advanceTo(3, "campaign-2", "guideStep.s12.title", "guideStep.s12.text"),
   {
     kind: "do",
-    title: "Set a Scandal",
-    text:
-      "Hot Mic is a Scandal: a trap. Set it face-down and it fires by itself when its trigger happens " +
-      "(here: if they attack you directly).",
-    targets: [{ kind: "hand", cardId: "hot-mic" }, { kind: "menu", label: "Set face-down" }],
+    title: "guideStep.s13.title",
+    text: "guideStep.s13.text",
+    targets: [{ kind: "hand", cardId: "hot-mic" }, { kind: "menu", action: "set-face-down" }],
     where: "high",
     allow: (action) => action.type === "set-scandal" && action.scandalCardId === "hot-mic",
     done: (view) => view.duelists[GUIDE_YOU].setScandals.length > 0,
   },
-  endTurn(3, "Advance until your turn ends."),
-  watch(3, "The computer is up to something..."),
+  endTurn(3, "guideStep.s14.text"),
+  watch(3, "guideStep.s15.text"),
   {
     kind: "next",
-    title: "What just happened",
-    text:
-      "A Presidential Pardon brought their Host back from the Embassy to their hand. " +
-      "They also deployed a Protester and Set a face-down card. Keep an eye on it.",
+    title: "guideStep.s16.title",
+    text: "guideStep.s16.text",
     targets: [{ kind: "field", side: "them", cardId: "protester" }, { kind: "their-set" }],
   },
   {
     kind: "next",
-    title: "Election Night",
-    text:
-      "In this short duel the votes are counted when the computer's next turn ends. " +
-      "Votes = Mandate + ATK of your Campaign Actors + bonus votes. A lead of more than 3 wins.",
+    title: "guideStep.s17.title",
+    text: "guideStep.s17.text",
     targets: [{ kind: "election" }, { kind: "poll" }],
   },
-  advanceTo(5, "campaign-1", "Your turn", "Advance to Campaign 1."),
+  advanceTo(5, "campaign-1", "guideStep.s18.title", "guideStep.s18.text"),
   {
     kind: "do",
-    title: "Play a Policy",
-    text: "Bot Farm is a Policy. Tap it and choose Activate: +3 bonus votes on Election Night.",
-    targets: [{ kind: "hand", cardId: "bot-farm" }, { kind: "menu", label: "Activate" }],
+    title: "guideStep.s19.title",
+    text: "guideStep.s19.text",
+    targets: [{ kind: "hand", cardId: "bot-farm" }, { kind: "menu", action: "activate" }],
     allow: (action) => action.type === "activate-policy" && action.policyCardId === "bot-farm",
     done: (view) => view.duelists[GUIDE_YOU].archive.includes("bot-farm"),
   },
   {
     kind: "do",
-    title: "Equip an Actor",
-    text:
-      "Lobbying Deal is an Equip: it stays on one of your Actors. " +
-      "Activate it, then tap your Protester: +1 ATK.",
+    title: "guideStep.s20.title",
+    text: "guideStep.s20.text",
     targets: [
       { kind: "hand", cardId: "lobbying-deal" },
-      { kind: "menu", label: "Activate" },
+      { kind: "menu", action: "activate" },
       { kind: "field", side: "you", cardId: "protester" },
     ],
     where: "high",
@@ -264,11 +250,11 @@ export const GUIDE_STEPS: GuideStep[] = [
       action.options?.targetInstanceId === fieldInstance(view, "you", "protester"),
     done: (view) => view.duelists[GUIDE_YOU].backroomPolicies.some((policy) => policy.cardId === "lobbying-deal"),
   },
-  advanceTo(5, "confrontation", "Attack again", "Advance to the Confrontation phase."),
+  advanceTo(5, "confrontation", "guideStep.s21.title", "guideStep.s21.text"),
   {
     kind: "do",
-    title: "Attack their Protester",
-    text: "Your Protester has ATK 5 now. Attack their Protester (ATK 4).",
+    title: "guideStep.s22.title",
+    text: "guideStep.s22.text",
     targets: [
       { kind: "field", side: "you", cardId: "protester" },
       { kind: "field", side: "them", cardId: "protester" },
@@ -278,39 +264,31 @@ export const GUIDE_STEPS: GuideStep[] = [
   },
   {
     kind: "next",
-    title: "Gotcha!",
-    text:
-      "Their face-down card was Leaked Emails, a Scandal that fires when you attack their Actors. " +
-      "It cost you 4 Mandate. You still won the fight, but Scandals can turn a duel around.",
+    title: "guideStep.s23.title",
+    text: "guideStep.s23.text",
     targets: [{ kind: "mandate", side: "you" }],
   },
-  advanceTo(5, "campaign-2", "Campaign 2", "Advance to Campaign 2."),
+  advanceTo(5, "campaign-2", "guideStep.s24.title", "guideStep.s24.text"),
   {
     kind: "do",
-    title: "Stand up for the count",
-    text:
-      "Tap your Riot Cop and choose Switch to Campaign. In Campaign its ATK 3 counts as votes " +
-      "(but it can be attacked for damage).",
-    targets: [{ kind: "field", side: "you", cardId: "riot-cop" }, { kind: "menu", label: "Switch to Campaign" }],
+    title: "guideStep.s25.title",
+    text: "guideStep.s25.text",
+    targets: [{ kind: "field", side: "you", cardId: "riot-cop" }, { kind: "menu", action: "to-campaign" }],
     allow: (action, view) =>
       action.type === "change-stance" && action.instanceId === fieldInstance(view, "you", "riot-cop"),
     done: (view) => actorOf(view, GUIDE_YOU, "riot-cop")?.stance === "campaign",
   },
-  endTurn(5, "End your turn. The votes are counted when the computer's turn ends."),
+  endTurn(5, "guideStep.s26.text"),
   {
     kind: "watch",
-    title: "Election Night",
-    text: "The computer plays its last turn, then the votes are counted.",
+    title: "guideStep.s27.title",
+    text: "guideStep.s27.text",
     targets: [{ kind: "poll" }],
     done: (view) => view.winnerId !== null,
   },
   {
     kind: "end",
-    title: "Tutorial complete!",
-    text:
-      "You know the basics: deploying, stances, attacks, Policies, Scandals and the election. " +
-      "This starter roster is just a slice of the full cast -- win duels offline against the " +
-      "computer and new politicians unlock automatically. Check the Field Guide from the main " +
-      "menu any time to see who's next. Ready for a real duel?",
+    title: "guideStep.s28.title",
+    text: "guideStep.s28.text",
   },
 ];

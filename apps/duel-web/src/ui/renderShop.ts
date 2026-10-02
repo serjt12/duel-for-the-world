@@ -8,6 +8,8 @@ import {
 } from "@duel-for-the-world/duel-content";
 import type { ActorRole, CardId } from "@duel-for-the-world/duel-content";
 import { rewardedAdAvailable, showRewardedAd } from "../ads/ads";
+import { t, tf } from "../i18n";
+import { localizedCardFlavor, localizedCardName } from "../i18n/cardText";
 import type { ClientState } from "../state/ClientState";
 import { addDonation, canAffordUnlock, donations, spendOnUnlock, UNLOCK_COST } from "../state/donations";
 import { effectiveOfflineWins, grantBonusUnlockWin } from "../state/progress";
@@ -29,14 +31,16 @@ import { flavorOf } from "./flavor";
 
 type ShopFilter = "all" | ActorRole | "policy" | "scandal";
 
-const TYPES: Array<{ key: ShopFilter; label: string; icon: string }> = [
-  { key: "all", label: "All", icon: "\u{1F5C2}️" }, // 🗂️
-  { key: "militant", label: "Militant", icon: "✊" }, // ✊
-  { key: "enforcer", label: "Enforcer", icon: "\u{1F6E1}️" }, // 🛡️
-  { key: "orator", label: "Orator", icon: "\u{1F3A4}" }, // 🎤
-  { key: "operator", label: "Operator", icon: "\u{1F454}" }, // 👔
-  { key: "policy", label: "Policy", icon: "\u{1F4DC}" }, // 📜
-  { key: "scandal", label: "Scandal", icon: "\u{1F4F0}" }, // 📰
+// Labels are resolved live (t()) rather than baked in, so the Field Guide
+// relabels itself instantly on a language switch.
+const TYPES: Array<{ key: ShopFilter; labelKey: string; icon: string }> = [
+  { key: "all", labelKey: "shop.type.all", icon: "\u{1F5C2}️" }, // 🗂️
+  { key: "militant", labelKey: "role.militant", icon: "✊" }, // ✊
+  { key: "enforcer", labelKey: "role.enforcer", icon: "\u{1F6E1}️" }, // 🛡️
+  { key: "orator", labelKey: "role.orator", icon: "\u{1F3A4}" }, // 🎤
+  { key: "operator", labelKey: "role.operator", icon: "\u{1F454}" }, // 👔
+  { key: "policy", labelKey: "cardInfo.category.policy", icon: "\u{1F4DC}" }, // 📜
+  { key: "scandal", labelKey: "cardInfo.category.scandal", icon: "\u{1F4F0}" }, // 📰
 ];
 
 function typeOf(cardId: CardId): Exclude<ShopFilter, "all"> {
@@ -61,7 +65,7 @@ function renderTile(cardId: CardId, dexNumber: number, unlocked: boolean, select
     {
       type: "button",
       className: classNames(["dex-tile", unlocked ? "dex-tile--unlocked" : "dex-tile--locked", selected && "dex-tile--selected"]),
-      title: unlocked ? CARDS[cardId].name : "???",
+      title: unlocked ? localizedCardName(cardId, CARDS[cardId].name) : "???",
       onclick: onClick,
     },
     [
@@ -79,7 +83,7 @@ function renderTile(cardId: CardId, dexNumber: number, unlocked: boolean, select
 // a mystery card -- same size and frame, dark art, "???" -- until then.
 function renderSpotlight(cardId: CardId, dexNumber: number, unlocked: boolean, toGo: number): HTMLElement {
   const card = CARDS[cardId];
-  const type = TYPES.find((t) => t.key === typeOf(cardId))!;
+  const type = TYPES.find((ty) => ty.key === typeOf(cardId))!;
   const face = unlocked
     ? renderCardFace(cardId, {})
     : el("div", { className: `card card--${card.category} dex-mystery-card` }, [
@@ -89,23 +93,23 @@ function renderSpotlight(cardId: CardId, dexNumber: number, unlocked: boolean, t
         ]),
         el("div", { className: "card-body" }, [
           el("div", { className: "card-name" }, ["???"]),
-          el("div", { className: "card-tag" }, ["Not yet identified"]),
+          el("div", { className: "card-tag" }, [t("shop.notIdentified")]),
         ]),
       ]);
 
   const infoLines: Array<HTMLElement | null> = [
     el("div", { className: "dex-spotlight-header" }, [
       el("span", { className: "dex-spotlight-number" }, [dexLabel(dexNumber)]),
-      el("span", { className: "dex-spotlight-type" }, [`${type.icon} ${type.label}`]),
+      el("span", { className: "dex-spotlight-type" }, [`${type.icon} ${t(type.labelKey)}`]),
     ]),
   ];
 
   if (unlocked) {
-    infoLines.push(el("p", { className: "dex-spotlight-flavor" }, [`“${card.flavorText}”`]));
+    infoLines.push(el("p", { className: "dex-spotlight-flavor" }, [`“${localizedCardFlavor(cardId, card.flavorText)}”`]));
   } else {
     infoLines.push(
       el("p", { className: "dex-spotlight-flavor dex-spotlight-flavor--locked" }, [
-        `\u{1F512} Win ${toGo} more offline match${toGo === 1 ? "" : "es"} to identify this politician.`,
+        toGo === 1 ? t("shop.spotlightLocked.one") : tf("shop.spotlightLocked.many", { n: String(toGo) }),
       ]),
     );
   }
@@ -155,11 +159,11 @@ export function renderShop(state: ClientState, rerender: () => void): HTMLElemen
   const spotlightToGo = requirement.has(selectedId) ? Math.max(0, requirement.get(selectedId)! - wins) : 0;
 
   const header: Array<HTMLElement | null> = [
-    el("h2", { className: "menu-heading" }, ["Field Guide"]),
+    el("h2", { className: "menu-heading" }, [t("menu.fieldGuide.label")]),
     el("p", { className: "settings-note" }, [
       gated
-        ? `${unlocked.size} / ${all.length} types of ${editionName} politicians identified. Online always uses every card.`
-        : `All ${all.length} ${editionName} politicians are already identified -- this edition doesn't gate any of them yet.`,
+        ? tf("shop.progress.gated", { unlocked: String(unlocked.size), total: String(all.length), edition: editionName })
+        : tf("shop.progress.ungated", { total: String(all.length), edition: editionName }),
     ]),
   ];
   if (gated) {
@@ -167,9 +171,11 @@ export function renderShop(state: ClientState, rerender: () => void): HTMLElemen
       el("div", { className: "shop-progress-bar" }, [progressFill]),
       upcoming
         ? el("p", { className: "shop-next-line" }, [
-            `⭐ Next up, in ${upcoming.winsRequired - wins} more offline win${upcoming.winsRequired - wins === 1 ? "" : "s"} (${wins} so far).`,
+            upcoming.winsRequired - wins === 1
+              ? tf("shop.next.one", { wins: String(wins) })
+              : tf("shop.next.many", { n: String(upcoming.winsRequired - wins), wins: String(wins) }),
           ])
-        : el("p", { className: "shop-next-line shop-next-line--done" }, ["\u{1F3C6} Every politician in this edition is identified!"]),
+        : el("p", { className: "shop-next-line shop-next-line--done" }, [t("shop.next.done")]),
     );
   }
 
@@ -194,36 +200,38 @@ export function renderShop(state: ClientState, rerender: () => void): HTMLElemen
     };
     header.push(
       el("div", { className: "dex-donations" }, [
-        el("span", { className: "dex-donations-balance" }, [`\u{1F4B0} ${balance} Donation${balance === 1 ? "" : "s"}`]),
+        el("span", { className: "dex-donations-balance" }, [
+          balance === 1 ? t("shop.donations.balance.one") : tf("shop.donations.balance.many", { n: String(balance) }),
+        ]),
         el(
           "button",
           { type: "button", className: "dex-donations-btn", disabled: watchingAd || !adReady, onclick: () => void watchAd() },
-          [watchingAd ? "Watching..." : "\u{1F4FA} Watch ad: +1 Donation"],
+          [watchingAd ? t("shop.donations.watching") : t("shop.donations.watchAd")],
         ),
         el(
           "button",
           { type: "button", className: "dex-donations-btn primary", disabled: !canAffordUnlock(), onclick: buyUnlock },
-          [`Unlock now (${UNLOCK_COST})`],
+          [tf("shop.donations.unlockNow", { cost: String(UNLOCK_COST) })],
         ),
       ]),
-      adReady ? null : el("p", { className: "dex-donations-note" }, ["Ads only work in the installed Android app."]),
+      adReady ? null : el("p", { className: "dex-donations-note" }, [t("shop.donations.adsNote")]),
     );
   }
 
   const filterRow = el(
     "div",
-    { className: "dex-filters", role: "tablist", ariaLabel: "Filter by type" },
-    TYPES.map((t) =>
+    { className: "dex-filters", role: "tablist", ariaLabel: t("shop.filterByType") },
+    TYPES.map((type) =>
       el(
         "button",
         {
           type: "button",
-          className: classNames(["dex-chip", state.shopFilter === t.key && "dex-chip--active"]),
+          className: classNames(["dex-chip", state.shopFilter === type.key && "dex-chip--active"]),
           role: "tab",
-          ariaSelected: String(state.shopFilter === t.key),
-          onclick: selectFilter(t.key),
+          ariaSelected: String(state.shopFilter === type.key),
+          onclick: selectFilter(type.key),
         },
-        [`${t.icon} ${t.label}`],
+        [`${type.icon} ${t(type.labelKey)}`],
       ),
     ),
   );
@@ -234,15 +242,28 @@ export function renderShop(state: ClientState, rerender: () => void): HTMLElemen
     shown.map((id) => renderTile(id, dexNumber.get(id)!, unlocked.has(id), id === selectedId, select(id))),
   );
 
+  // The Pokedex-style two-pane body: a fixed spotlight pane (the
+  // selected entry, large) beside a browse pane (filter chips + the
+  // numbered grid, which scrolls on its own). Wrapped in dedicated
+  // containers -- rather than leaving spotlight/filters/grid as flat
+  // siblings of the panel -- so the panel can give each region a fixed,
+  // non-overlapping box instead of relying on scroll position or stray
+  // "order" tricks to keep things apart (see style.css's .dex-main /
+  // .dex-main-spotlight / .dex-main-browse).
+  const main = el("div", { className: "dex-main" }, [
+    el("div", { className: "dex-main-spotlight" }, [
+      renderSpotlight(selectedId, dexNumber.get(selectedId)!, unlocked.has(selectedId), spotlightToGo),
+    ]),
+    el("div", { className: "dex-main-browse" }, [filterRow, grid]),
+  ]);
+
   const panel = el(
     "div",
-    { className: "settings-panel shop-panel", role: "dialog", ariaLabel: "Field Guide", onclick: (event: MouseEvent) => event.stopPropagation() },
+    { className: "settings-panel shop-panel", role: "dialog", ariaLabel: t("menu.fieldGuide.label"), onclick: (event: MouseEvent) => event.stopPropagation() },
     [
       ...header,
-      renderSpotlight(selectedId, dexNumber.get(selectedId)!, unlocked.has(selectedId), spotlightToGo),
-      filterRow,
-      grid,
-      el("div", { className: "menu-actions" }, [el("span", {}), el("button", { className: "primary", onclick: close }, ["Done"])]),
+      main,
+      el("div", { className: "menu-actions" }, [el("span", {}), el("button", { className: "primary", onclick: close }, [t("common.done")])]),
     ],
   );
   return el("div", { className: "settings-backdrop", onclick: close }, [panel]);

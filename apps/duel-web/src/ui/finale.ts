@@ -4,6 +4,8 @@ import type { DuelEvent, DuelistId, VoteCount } from "@duel-for-the-world/duel-e
 import { playCrowdReaction } from "../audio/sound";
 import type { GameClient } from "../net/GameClient";
 import type { ClientState } from "../state/ClientState";
+import { t, tf } from "../i18n";
+import { localizedCardName } from "../i18n/cardText";
 import { progress, recordOfflineWin } from "../state/progress";
 import { renderCardFace } from "./cardView";
 import { el } from "./dom";
@@ -81,20 +83,28 @@ function build(state: ClientState, client: GameClient, rerender: () => void, unl
   const children: Array<HTMLElement | null> = [
     el("div", { className: "paper-masthead" }, [words.masthead]),
     el("div", { className: "paper-edition" }, [
-      words.edition === "colombia" ? `Edición Extraordinaria · Turno ${duel.turnNumber}` : `Special Edition · Turn ${duel.turnNumber}`,
+      words.edition === "colombia"
+        ? `Edición Extraordinaria · Turno ${duel.turnNumber}`
+        : tf("finale.edition.world", { n: String(duel.turnNumber) }),
     ]),
     el("h2", { className: `paper-headline${won ? "" : " paper-headline--lost"}` }, [copy.headline]),
     el("p", { className: "paper-deck" }, [copy.deck]),
   ];
 
   if (election) {
-    const rows = [voteRow("You", election.votes[you], true), voteRow("Opponent", election.votes[opponent], false)];
+    const rows = [voteRow(t("finale.you"), election.votes[you], true), voteRow(t("finale.opponent"), election.votes[opponent], false)];
     const max = Math.max(election.votes[you].total, election.votes[opponent].total, 1);
     const status = el("div", { className: "count-status" }, [words.bulletin(1, null)]);
-    const bonus = (votes: VoteCount) => (votes.bonus > 0 ? ` + ${votes.bonus} bonus` : "");
+    const bonus = (votes: VoteCount) => (votes.bonus > 0 ? tf("finale.bonus", { n: String(votes.bonus) }) : "");
     const breakdown = el("div", { className: "count-breakdown" }, [
-      `You: ${election.votes[you].mandate} Mandate + ${election.votes[you].campaign} in Campaign${bonus(election.votes[you])} · ` +
-        `Opponent: ${election.votes[opponent].mandate} + ${election.votes[opponent].campaign}${bonus(election.votes[opponent])}`,
+      tf("finale.breakdown", {
+        youMandate: String(election.votes[you].mandate),
+        youCampaign: String(election.votes[you].campaign),
+        youBonus: bonus(election.votes[you]),
+        oppMandate: String(election.votes[opponent].mandate),
+        oppCampaign: String(election.votes[opponent].campaign),
+        oppBonus: bonus(election.votes[opponent]),
+      }),
     ]);
     breakdown.style.visibility = "hidden";
     children.push(
@@ -121,9 +131,9 @@ function build(state: ClientState, client: GameClient, rerender: () => void, unl
     });
   } else {
     const mandate = el("div", { className: "paper-count" }, [
-      el("div", { className: "count-title" }, ["Final Mandate"]),
+      el("div", { className: "count-title" }, [t("finale.finalMandate")]),
       el("div", { className: "count-breakdown" }, [
-        `You ${duel.duelists[you].mandate} · Opponent ${duel.duelists[opponent].mandate}`,
+        tf("finale.mandateBreakdown", { you: String(duel.duelists[you].mandate), opponent: String(duel.duelists[opponent].mandate) }),
       ]),
     ]);
     children.push(mandate);
@@ -134,9 +144,9 @@ function build(state: ClientState, client: GameClient, rerender: () => void, unl
     const cardId = unlockedCardId;
     children.push(
       el("div", { className: "unlock-reveal" }, [
-        el("div", { className: "unlock-reveal-label" }, ["\u{1F389} New Politician Identified!"]),
+        el("div", { className: "unlock-reveal-label" }, [t("finale.newPolitician")]),
         el("div", { className: "unlock-reveal-card" }, [renderCardFace(cardId, {})]),
-        el("div", { className: "unlock-reveal-name" }, [CARDS[cardId].name]),
+        el("div", { className: "unlock-reveal-name" }, [localizedCardName(cardId, CARDS[cardId].name)]),
         el(
           "button",
           {
@@ -148,7 +158,7 @@ function build(state: ClientState, client: GameClient, rerender: () => void, unl
               rerender();
             },
           },
-          ["See in the Field Guide"],
+          [t("finale.seeInFieldGuide")],
         ),
       ]),
     );
@@ -159,9 +169,9 @@ function build(state: ClientState, client: GameClient, rerender: () => void, unl
   const youAsked = votes.includes(you);
   const theyAsked = votes.includes(opponent);
   const note = youAsked
-    ? "Waiting for your opponent to accept the rematch..."
+    ? t("finale.waitingRematch")
     : theyAsked
-      ? "Your opponent wants a rematch!"
+      ? t("finale.opponentWantsRematch")
       : null;
   // The tutorial ends here: its "rematch" is a first real duel.
   const guide = state.guide !== null;
@@ -175,7 +185,7 @@ function build(state: ClientState, client: GameClient, rerender: () => void, unl
           disabled: youAsked,
           onclick: () => client.sendAction({ type: "rematch" }),
         },
-        [guide ? "Play vs Computer" : theyAsked && !youAsked ? `${words.rematch} Accept` : words.rematch],
+        [guide ? t("menu.playVsComputer.label") : theyAsked && !youAsked ? `${words.rematch} ${t("finale.accept")}` : words.rematch],
       ),
       el(
         "button",
@@ -185,7 +195,7 @@ function build(state: ClientState, client: GameClient, rerender: () => void, unl
             rerender();
           },
         },
-        ["View the board"],
+        [t("finale.viewBoard")],
       ),
     ]),
   );

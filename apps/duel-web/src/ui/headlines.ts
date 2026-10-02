@@ -1,6 +1,7 @@
 import type { DuelEvent } from "@duel-for-the-world/duel-engine";
 import type { PublicDuelState } from "@duel-for-the-world/duel-server";
 import type { ClientState } from "../state/ClientState";
+import { t, tf } from "../i18n";
 import { el } from "./dom";
 import { describeEvent } from "./eventText";
 import type { Headline } from "./eventText";
@@ -103,7 +104,7 @@ export function renderLogPanel(state: ClientState, rerender: () => void): HTMLEl
     return [];
   }
   const tab = el("button", { className: "log-tab", onclick: () => toggleLog(state, rerender) }, [
-    state.logOpen ? `Hide ${flavor().headlines} ×` : flavor().headlines,
+    state.logOpen ? tf("headlines.hide", { label: flavor().headlines }) : flavor().headlines,
   ]);
   if (!state.logOpen) {
     return [tab];
@@ -117,8 +118,8 @@ export function renderLogPanel(state: ClientState, rerender: () => void): HTMLEl
       el("h2", {}, [flavor().headlines]),
       el("button", { className: "tutorial-close", onclick: () => toggleLog(state, rerender) }, ["×"]),
     ]),
-    el("p", { className: "log-panel-hint" }, ["Everything that happened in the duel, newest first."]),
-    el("div", { className: "log-lines" }, lines.length > 0 ? lines : [el("p", {}, ["Nothing yet."])]),
+    el("p", { className: "log-panel-hint" }, [t("headlines.hint")]),
+    el("div", { className: "log-lines" }, lines.length > 0 ? lines : [el("p", {}, [t("headlines.empty")])]),
   ]);
   return [tab, panel];
 }

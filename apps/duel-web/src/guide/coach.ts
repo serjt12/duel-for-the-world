@@ -1,5 +1,6 @@
 import type { PlayerAction } from "@duel-for-the-world/duel-server";
 import type { ClientState } from "../state/ClientState";
+import { t, tf } from "../i18n";
 import { el } from "../ui/dom";
 import { isPhoneLayout } from "../ui/stage";
 import { fieldInstance, GUIDE_STEPS, GUIDE_THEM } from "./script";
@@ -99,11 +100,11 @@ export function renderCoach(state: ClientState, actions: CoachActions): HTMLElem
   const total = GUIDE_STEPS.length;
   const buttons: HTMLElement[] = [];
   if (step.kind === "next") {
-    buttons.push(el("button", { className: "primary", onclick: () => actions.next() }, [step.button ?? "Next"]));
+    buttons.push(el("button", { className: "primary", onclick: () => actions.next() }, [t(step.button ?? "coach.next")]));
   } else if (step.kind === "end") {
     buttons.push(
-      el("button", { onclick: () => actions.toMenu() }, ["Main menu"]),
-      el("button", { className: "primary", onclick: () => actions.playForReal() }, ["Play vs Computer"]),
+      el("button", { onclick: () => actions.toMenu() }, [t("coach.mainMenu")]),
+      el("button", { className: "primary", onclick: () => actions.playForReal() }, [t("menu.playVsComputer.label")]),
     );
   }
 
@@ -111,10 +112,10 @@ export function renderCoach(state: ClientState, actions: CoachActions): HTMLElem
     blocked === 0
       ? null
       : step.kind === "next"
-        ? `First tap "${step.button ?? "Next"}".`
+        ? tf("coach.nudge.tapButton", { button: t(step.button ?? "coach.next") })
         : step.kind === "watch"
-          ? "Wait for the computer to finish."
-          : "Not that one yet: follow the glowing cards.";
+          ? t("coach.nudge.waitForComputer")
+          : t("coach.nudge.followGlowing");
 
   const where = step.where ?? "low";
   const box = el(
@@ -133,16 +134,18 @@ export function renderCoach(state: ClientState, actions: CoachActions): HTMLElem
     },
     [
       el("div", { className: "coach-head" }, [
-        el("span", { className: "coach-count" }, [step.kind === "end" ? "Tutorial" : `Tutorial · ${state.guide.step + 1}/${total - 1}`]),
+        el("span", { className: "coach-count" }, [
+          step.kind === "end" ? t("coach.counter.tutorial") : tf("coach.counter.step", { current: String(state.guide.step + 1), total: String(total - 1) }),
+        ]),
         step.kind === "watch" ? el("span", { className: "coach-dots", ariaHidden: "true" }, ["● ● ●"]) : null,
       ]),
-      el("strong", { className: "coach-title" }, [step.title]),
-      el("p", { className: "coach-text" }, [step.text]),
+      el("strong", { className: "coach-title" }, [t(step.title)]),
+      el("p", { className: "coach-text" }, [t(step.text)]),
       nudge ? el("p", { className: "coach-nudge" }, [nudge]) : null,
       blocked >= STUCK_THRESHOLD
         ? el("p", { className: "coach-stuck" }, [
-            "Not going the way it should? ",
-            el("button", { className: "coach-stuck-restart", onclick: () => actions.restart() }, ["Restart the tutorial"]),
+            t("coach.stuckPrompt"),
+            el("button", { className: "coach-stuck-restart", onclick: () => actions.restart() }, [t("coach.restart")]),
           ])
         : null,
       buttons.length > 0 ? el("div", { className: "coach-actions" }, buttons) : null,
@@ -176,7 +179,7 @@ function elementsFor(target: GuideTarget, state: ClientState, root: HTMLElement)
       return ids.flatMap((id) => all(`.side--opponent [data-instance-id="${id}"]`));
     }
     case "menu":
-      return all(".hand-menu button, .zone-menu button").filter((button) => button.textContent?.startsWith(target.label));
+      return all(`.hand-menu button[data-guide-action="${target.action}"], .zone-menu button[data-guide-action="${target.action}"]`);
     case "advance":
       return all(".advance-button");
     case "mandate":

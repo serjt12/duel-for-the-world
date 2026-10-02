@@ -1,5 +1,6 @@
 import type { DuelPhase } from "@duel-for-the-world/duel-engine";
 import type { ClientState } from "../state/ClientState";
+import { t } from "../i18n";
 import { el } from "./dom";
 import { generalGuide, phaseGuide, PHASE_ORDER } from "./phaseInfo";
 
@@ -45,7 +46,7 @@ function renderPhaseEntry(phase: DuelPhase, isCurrent: boolean): HTMLElement {
     [
       el("div", { className: "phase-guide-title" }, [
         guide.label,
-        isCurrent ? el("span", { className: "phase-guide-now" }, ["NOW"]) : null,
+        isCurrent ? el("span", { className: "phase-guide-now" }, [t("tutorialPanel.now")]) : null,
       ]),
       el("div", { className: "phase-guide-summary" }, [guide.summary]),
       el(
@@ -72,7 +73,7 @@ export function renderTutorialPanel(
       className: "tutorial-tab",
       onclick: () => toggleTutorial(state, rerender),
     },
-    [state.tutorialOpen ? "Hide Guide ×" : "How to Play"],
+    [state.tutorialOpen ? t("tutorialPanel.hide") : t("menu.howToPlay")],
   );
 
   if (!state.tutorialOpen) {
@@ -81,7 +82,7 @@ export function renderTutorialPanel(
 
   const panel = el("aside", { className: "tutorial-panel" }, [
     el("div", { className: "tutorial-header" }, [
-      el("h2", {}, ["How to Play"]),
+      el("h2", {}, [t("menu.howToPlay")]),
       el(
         "button",
         { className: "tutorial-close", onclick: () => toggleTutorial(state, rerender) },
@@ -89,7 +90,7 @@ export function renderTutorialPanel(
       ),
     ]),
     el("div", { className: "tutorial-section" }, [
-      el("h3", {}, ["The Basics"]),
+      el("h3", {}, [t("tutorialPanel.basics")]),
       el(
         "ul",
         {},
@@ -97,7 +98,7 @@ export function renderTutorialPanel(
       ),
     ]),
     el("div", { className: "tutorial-section" }, [
-      el("h3", {}, ["The Turn, Phase by Phase"]),
+      el("h3", {}, [t("tutorialPanel.turnByPhase")]),
       ...PHASE_ORDER.map((phase) => renderPhaseEntry(phase, phase === currentPhase)),
     ]),
   ]);
